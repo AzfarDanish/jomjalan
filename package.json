@@ -1,0 +1,16 @@
+{
+  "name": "jomjalan",
+  "version": "1.0.0",
+  "description": "travel agency application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "azfar",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-reload": "^2.0.0-alpha.1"
+  }
+}
