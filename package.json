@@ -12,5 +12,8 @@
   "devDependencies": {
     "electron": "^45.1.0",
     "electron-reload": "^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "openmeteo": "^1.2.3"
   }
 }

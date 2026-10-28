@@ -2,13 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Weather App</title>
+  <title>JomJalan</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png" />
 </head>
 <body>
-  <h1>Jom Jalan</h1>
+  <div class="app-container">
+    <!-- Fixed Left Sidebar -->
+    <aside id="sidebar" class="sidebar"></aside>
 
-  <script src="index.js"></script>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div class="hero">
+        <p class="tagline">Where do you want to go?</p>
+
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input
+            id="location-input"
+            type="text"
+            placeholder="Search a destination, e.g. Kuala Lumpur"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="clear-btn" class="clear-btn" title="Clear">&times;</button>
+          <div id="suggestions" class="suggestions hidden"></div>
+        </div>
+
+        <div id="selected-location" class="hidden"></div>
+        <div id="weather-card" class="hidden"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="sidebar.js"></script>
+  <script src="location.js"></script>
+  <script src="weather.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

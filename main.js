@@ -1,13 +1,15 @@
 require('electron-reload')(__dirname);
 const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-const fs = require('fs');
 
-let mainWindow;
-let itineraryWindow;
+const { loadKeys } = require('./backend/keys');
+const { searchLocation } = require('./backend/location');
+const { getWeather } = require('./backend/weather');
+const { saveItinerary } = require('./backend/itinerary');
+
+const apiKeys = loadKeys();
 
 function createMainWindow() {
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
     webPreferences: {
@@ -19,7 +21,7 @@ function createMainWindow() {
 }
 
 function createItineraryWindow(country) {
-  itineraryWindow = new BrowserWindow({
+  const itineraryWindow = new BrowserWindow({
     width: 600,
     height: 600,
     webPreferences: {
@@ -35,20 +37,10 @@ function createItineraryWindow(country) {
   });
 }
 
-ipcMain.on('open-itinerary-window', (event, country) => {
-  createItineraryWindow(country);
-});
-
-ipcMain.on('save-itinerary', (event, data) => {
-  const filePath = path.join(__dirname, 'data', 'itineraries.json');
-  let itineraries = [];
-
-  if (fs.existsSync(filePath)) {
-    itineraries = JSON.parse(fs.readFileSync(filePath));
-  }
-
-  itineraries.push(data);
-  fs.writeFileSync(filePath, JSON.stringify(itineraries, null, 2));
-});
+// Wire up IPC handlers.
+ipcMain.on('open-itinerary-window', (event, country) => createItineraryWindow(country));
+ipcMain.on('save-itinerary', (event, data) => saveItinerary(data));
+ipcMain.handle('search-location', async (event, text) => searchLocation(apiKeys, text));
+ipcMain.handle('get-weather', async (event, lat, lon) => getWeather(lat, lon));
 
 app.whenReady().then(createMainWindow);
