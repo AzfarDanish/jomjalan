@@ -1,38 +1,32 @@
-const Place = require('../models/Place');
 const Weather = require('../models/Weather');
 
 // This class is responsible only for talking to the Open-Meteo API.
 // The rest of the application uses its methods instead of building URLs itself.
 class OpenMeteoService {
   constructor() {
-    this.geocodingUrl = 'https://geocoding-api.open-meteo.com/v1/search';
     this.forecastUrl = 'https://api.open-meteo.com/v1/forecast';
-    this.maxResults = 10;
   }
 
-  // Search for every place that matches the name.
-  async searchPlaces(query) {
-    const url = new URL(this.geocodingUrl);
-    url.searchParams.set('name', query);
-    url.searchParams.set('count', String(this.maxResults));
-    url.searchParams.set('language', 'en');
-    url.searchParams.set('format', 'json');
+  // Get the current weather for anything with coordinates, such as a
+  // Destination.
+  async getWeather(location) {
+    if (
+      !location ||
+      typeof location.latitude !== 'number' ||
+      typeof location.longitude !== 'number'
+    ) {
+      throw new Error('A location with coordinates is required.');
+    }
 
-    const data = await this.request(url.toString());
-    const results = Array.isArray(data.results) ? data.results : [];
-
-    return results.map((item) => new Place(item));
-  }
-
-  // Get the current weather for one Place object.
-  async getWeather(place) {
     const url = new URL(this.forecastUrl);
-    url.searchParams.set('latitude', String(place.latitude));
-    url.searchParams.set('longitude', String(place.longitude));
+    url.searchParams.set('latitude', String(location.latitude));
+    url.searchParams.set('longitude', String(location.longitude));
     url.searchParams.set(
       'current',
-      'temperature_2m,apparent_temperature,weather_code,wind_speed_10m'
+      'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,' +
+        'weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
     );
+    url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min');
     url.searchParams.set('timezone', 'auto');
 
     const data = await this.request(url.toString());

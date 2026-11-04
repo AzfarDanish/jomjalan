@@ -87,39 +87,6 @@ button:disabled {
   color: #b00020;
 }
 
-.results {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: left;
-}
-
-.result-card {
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  padding: 16px;
-  background-color: #ffffff;
-}
-
-.result-card h2 {
-  font-size: 18px;
-  margin: 0 0 10px;
-}
-
-.result-card p {
-  margin: 4px 0;
-}
-
-.temperature {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.details {
-  color: #555555;
-}
-
 /* ============================================
    Home page: country/city discovery
    ============================================ */
@@ -230,8 +197,8 @@ button:disabled {
   margin-bottom: 0;
 }
 
-/* Country facts from countries.dev, shown above the category chips. */
-.country-info {
+/* Shared info panels: weather and country facts, above the category chips. */
+.info-panel {
   margin-top: 16px;
   padding: 16px;
   border: 1px solid #e0e0e0;
@@ -240,31 +207,31 @@ button:disabled {
   text-align: left;
 }
 
-.country-info-summary {
+.info-summary {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-.country-info-flag {
+.info-flag {
   font-size: 22px;
   line-height: 1;
 }
 
-.country-info-name {
+.info-name {
   font-size: 15px;
   font-weight: bold;
 }
 
-.country-info-facts {
+.info-facts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px 16px;
   margin: 0;
 }
 
-.country-info-fact dt {
+.info-fact dt {
   margin: 0;
   color: #777777;
   font-size: 11px;
@@ -273,17 +240,36 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.country-info-fact dd {
+.info-fact dd {
   margin: 2px 0 0;
   color: #333333;
   font-size: 14px;
   line-height: 1.4;
 }
 
-.country-info-message {
+.info-message {
   margin: 0;
   color: #777777;
   font-size: 13px;
+}
+
+/* Weather panel: the current temperature is the main detail. */
+.weather-current {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.weather-temperature {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.weather-description {
+  color: #555555;
+  font-size: 15px;
 }
 
 .filter-chips {

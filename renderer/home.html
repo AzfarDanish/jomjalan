@@ -48,10 +48,18 @@
         <p id="destinationSubtitle" class="tagline"></p>
       </header>
 
+      <!-- Current weather for the selected country or city. -->
+      <section
+        id="weatherInfo"
+        class="info-panel weather-info"
+        aria-live="polite"
+        hidden
+      ></section>
+
       <!-- Country facts loaded from countries.dev, above the category chips. -->
       <section
         id="countryInfo"
-        class="country-info"
+        class="info-panel country-info"
         aria-live="polite"
         hidden
       ></section>

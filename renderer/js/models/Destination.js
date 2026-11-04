@@ -10,7 +10,6 @@ class Destination {
     this.country = data.country || '';
     this.countryCode = (data.country_code || '').toLowerCase();
     this.state = data.state || '';
-    this.city = data.city || '';
     this.resultType = data.result_type || 'city';
     this.latitude = data.lat;
     this.longitude = data.lon;

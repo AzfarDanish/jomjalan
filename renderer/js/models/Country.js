@@ -8,7 +8,6 @@ class Country {
 
     this.name = data.name;
     this.alpha2Code = data.alpha2Code || '';
-    this.alpha3Code = data.alpha3Code || '';
     this.flag = data.flag || '';
     this.capital = data.capital || '';
     this.region = data.region || '';
@@ -22,7 +21,6 @@ class Country {
       ? data.callingCodes
       : [];
     this.timezones = Array.isArray(data.timezones) ? data.timezones : [];
-    this.demonym = data.demonym || '';
   }
 
   // Large numbers are easier to read as "32.4 million".

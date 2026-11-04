@@ -8,7 +8,6 @@ class CountryService {
     this.fields = [
       'name',
       'alpha2Code',
-      'alpha3Code',
       'flag',
       'capital',
       'region',
@@ -19,7 +18,6 @@ class CountryService {
       'languages',
       'callingCodes',
       'timezones',
-      'demonym',
     ].join(',');
   }
 

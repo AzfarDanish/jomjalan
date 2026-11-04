@@ -3,13 +3,16 @@
 const PlaceCategoryCatalog = require('../logics/PlaceCategoryCatalog');
 
 class HomeApp {
-  constructor(geoapifyService, countryService) {
-    if (!geoapifyService || !countryService) {
-      throw new Error('HomeApp needs a Geoapify service and a country service.');
+  constructor(geoapifyService, countryService, weatherService) {
+    if (!geoapifyService || !countryService || !weatherService) {
+      throw new Error(
+        'HomeApp needs a Geoapify service, a country service and a weather service.'
+      );
     }
 
     this.geoapifyService = geoapifyService;
     this.countryService = countryService;
+    this.weatherService = weatherService;
     this.categoryCatalog = new PlaceCategoryCatalog();
     this.pageSize = geoapifyService.getPageSize();
 
@@ -25,6 +28,7 @@ class HomeApp {
     this.destinationType = document.getElementById('destinationType');
     this.destinationTitle = document.getElementById('destinationTitle');
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
+    this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
     this.categoryFilters = document.getElementById('categoryFilters');
     this.poiMessage = document.getElementById('poiMessage');
@@ -39,6 +43,7 @@ class HomeApp {
     this.seenPoiIds = new Set();
     this.requestToken = 0;
     this.countryRequestToken = 0;
+    this.weatherRequestToken = 0;
   }
 
   start() {
@@ -158,9 +163,112 @@ class HomeApp {
     this.destinationView.hidden = false;
     window.scrollTo(0, 0);
 
-    // Country facts load in the background so places are not delayed.
+    // Weather and country facts load in the background so places are not delayed.
+    this.loadWeather(destination);
     this.loadCountryInfo(destination);
     await this.loadPois({ reset: true });
+  }
+
+  // Ask Open-Meteo about the destination's coordinates. This runs separately
+  // from the place search, so one failure does not block the other.
+  async loadWeather(destination) {
+    if (!this.weatherInfo) {
+      return;
+    }
+
+    const requestToken = ++this.weatherRequestToken;
+    this.clearWeather();
+
+    try {
+      const weather = await this.weatherService.getWeather(destination);
+
+      if (requestToken !== this.weatherRequestToken) {
+        return;
+      }
+
+      this.renderWeather(weather);
+    } catch (error) {
+      if (requestToken !== this.weatherRequestToken) {
+        return;
+      }
+
+      this.showWeatherMessage(error.message);
+    }
+  }
+
+  renderWeather(weather) {
+    this.weatherInfo.textContent = '';
+
+    const current = document.createElement('div');
+    current.className = 'weather-current';
+
+    const temperature = document.createElement('span');
+    temperature.className = 'weather-temperature';
+    temperature.textContent = weather.getTemperatureLabel();
+
+    const description = document.createElement('span');
+    description.className = 'weather-description';
+    description.textContent = weather.getDescription();
+
+    current.append(temperature, description);
+
+    const facts = [
+      { label: 'Feels like', value: weather.getFeelsLikeLabel() },
+      { label: 'Humidity', value: weather.getHumidityLabel() },
+      { label: 'Wind', value: weather.getWindLabel() },
+      { label: 'Wind gusts', value: weather.getWindGustLabel() },
+      { label: 'Precipitation', value: weather.getPrecipitationLabel() },
+      { label: 'Cloud cover', value: weather.getCloudCoverLabel() },
+      { label: 'Today', value: weather.getTemperatureRangeLabel() },
+    ].filter((fact) => fact.value);
+
+    this.weatherInfo.append(current, this.createFactList(facts));
+    this.weatherInfo.hidden = false;
+  }
+
+  showWeatherMessage(text) {
+    if (!this.weatherInfo) {
+      return;
+    }
+
+    const message = document.createElement('p');
+    message.className = 'info-message';
+    message.textContent = text;
+
+    this.weatherInfo.textContent = '';
+    this.weatherInfo.appendChild(message);
+    this.weatherInfo.hidden = false;
+  }
+
+  clearWeather() {
+    if (!this.weatherInfo) {
+      return;
+    }
+
+    this.weatherInfo.textContent = '';
+    this.weatherInfo.hidden = true;
+  }
+
+  // Build the shared label/value grid used by the weather and country panels.
+  createFactList(facts) {
+    const list = document.createElement('dl');
+    list.className = 'info-facts';
+
+    for (const fact of facts) {
+      const item = document.createElement('div');
+      item.className = 'info-fact';
+
+      const label = document.createElement('dt');
+      label.textContent = fact.label;
+
+      const value = document.createElement('dd');
+      value.textContent = fact.value;
+
+      item.append(label, value);
+      list.appendChild(item);
+    }
+
+    return list;
   }
 
   // Ask the country service about the destination's country. This runs
@@ -211,10 +319,10 @@ class HomeApp {
     this.countryInfo.textContent = '';
 
     const summary = document.createElement('div');
-    summary.className = 'country-info-summary';
+    summary.className = 'info-summary';
 
     const flag = document.createElement('span');
-    flag.className = 'country-info-flag';
+    flag.className = 'info-flag';
     flag.textContent = country.flag || '🏳️';
     summary.appendChild(flag);
 
@@ -222,29 +330,12 @@ class HomeApp {
     // when the destination is a city inside that country.
     if (!destination.isCountry()) {
       const name = document.createElement('span');
-      name.className = 'country-info-name';
+      name.className = 'info-name';
       name.textContent = country.name;
       summary.appendChild(name);
     }
 
-    const list = document.createElement('dl');
-    list.className = 'country-info-facts';
-
-    for (const fact of facts) {
-      const item = document.createElement('div');
-      item.className = 'country-info-fact';
-
-      const label = document.createElement('dt');
-      label.textContent = fact.label;
-
-      const value = document.createElement('dd');
-      value.textContent = fact.value;
-
-      item.append(label, value);
-      list.appendChild(item);
-    }
-
-    this.countryInfo.append(summary, list);
+    this.countryInfo.append(summary, this.createFactList(facts));
     this.countryInfo.hidden = false;
   }
 
@@ -254,7 +345,7 @@ class HomeApp {
     }
 
     const message = document.createElement('p');
-    message.className = 'country-info-message';
+    message.className = 'info-message';
     message.textContent = text;
 
     this.countryInfo.textContent = '';
@@ -433,12 +524,14 @@ class HomeApp {
     // Invalidate any request that is still running.
     this.requestToken += 1;
     this.countryRequestToken += 1;
+    this.weatherRequestToken += 1;
     this.isLoadingPois = false;
     this.destination = null;
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds.clear();
     this.clearCountryInfo();
+    this.clearWeather();
     this.poiResults.textContent = '';
     this.poiMessage.textContent = '';
     this.loadMoreButton.hidden = true;
