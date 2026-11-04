@@ -2,16 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Weather App</title>
+  <title>JomJalan Weather</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png" />
 </head>
 <body>
-  <h1>🌤 Weather Search</h1>
-  <input type="text" id="country" placeholder="Enter country" />
-  <button id="searchBtn">🔍 Search</button>
-  <div id="result"></div>
-  <button id="itineraryBtn" style="display:none;">✈️ Create Itinerary</button>
+  <main class="app">
+    <header>
+      <h1>JomJalan</h1>
+      <p class="tagline">Travel weather search</p>
+    </header>
+
+    <!-- The search form is the center of the application. -->
+    <form id="searchForm" class="search-form">
+      <input
+        type="text"
+        id="placeInput"
+        placeholder="Search a city or place"
+        aria-label="Place name"
+        autocomplete="off"
+      />
+      <button type="submit" id="searchBtn">Search</button>
+    </form>
+
+    <p id="message" class="message" role="status"></p>
+
+    <!-- Weather results are added here, below the search bar. -->
+    <section id="results" class="results" aria-live="polite"></section>
+  </main>
 
   <script src="index.js"></script>
 </body>
