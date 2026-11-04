@@ -1,6 +1,7 @@
 // The home page: search for a country or city, then browse its places by
 // category. Places are only requested after the user picks a destination.
 const PlaceCategoryCatalog = require('../logics/PlaceCategoryCatalog');
+const { ActivityRecommender } = require('../logics/ActivityRecommender');
 
 class HomeApp {
   constructor(geoapifyService, countryService, weatherService) {
@@ -14,6 +15,7 @@ class HomeApp {
     this.countryService = countryService;
     this.weatherService = weatherService;
     this.categoryCatalog = new PlaceCategoryCatalog();
+    this.activityRecommender = new ActivityRecommender();
     this.pageSize = geoapifyService.getPageSize();
 
     this.destinationForm = document.getElementById('destinationForm');
@@ -30,6 +32,7 @@ class HomeApp {
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
     this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
+    this.recommendationsInfo = document.getElementById('recommendationsInfo');
     this.categoryFilters = document.getElementById('categoryFilters');
     this.poiMessage = document.getElementById('poiMessage');
     this.poiResults = document.getElementById('poiResults');
@@ -38,6 +41,8 @@ class HomeApp {
     this.isSearching = false;
     this.isLoadingPois = false;
     this.destination = null;
+    this.currentCountry = null;
+    this.currentWeather = null;
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds = new Set();
@@ -148,6 +153,8 @@ class HomeApp {
 
   async openDestination(destination) {
     this.destination = destination;
+    this.currentCountry = null;
+    this.currentWeather = null;
     this.selectedCategory = this.categoryCatalog.getDefaultGroup();
     this.offset = 0;
     this.seenPoiIds.clear();
@@ -159,6 +166,7 @@ class HomeApp {
     this.destinationSubtitle.textContent = destination.formatted;
 
     this.renderCategoryChips();
+    this.clearRecommendations();
     this.discoverView.hidden = true;
     this.destinationView.hidden = false;
     window.scrollTo(0, 0);
@@ -186,13 +194,17 @@ class HomeApp {
         return;
       }
 
+      this.currentWeather = weather;
       this.renderWeather(weather);
+      this.updateRecommendations();
     } catch (error) {
       if (requestToken !== this.weatherRequestToken) {
         return;
       }
 
+      this.currentWeather = null;
       this.showWeatherMessage(error.message);
+      this.updateRecommendations();
     }
   }
 
@@ -294,13 +306,17 @@ class HomeApp {
         return;
       }
 
+      this.currentCountry = country;
       this.renderCountryInfo(country, destination);
+      this.updateRecommendations();
     } catch (error) {
       if (requestToken !== this.countryRequestToken) {
         return;
       }
 
+      this.currentCountry = null;
       this.showCountryInfoMessage(error.message);
+      this.updateRecommendations();
     }
   }
 
@@ -360,6 +376,80 @@ class HomeApp {
 
     this.countryInfo.textContent = '';
     this.countryInfo.hidden = true;
+  }
+
+  // Update activity suggestions whenever new weather or country data arrives.
+  updateRecommendations() {
+    if (!this.recommendationsInfo || !this.destination) {
+      return;
+    }
+
+    const result = this.activityRecommender.recommend(
+      this.destination,
+      this.currentCountry,
+      this.currentWeather
+    );
+
+    this.renderRecommendations(result);
+  }
+
+  renderRecommendations(result) {
+    if (!this.recommendationsInfo) {
+      return;
+    }
+
+    this.recommendationsInfo.textContent = '';
+
+    const heading = document.createElement('h2');
+    heading.className = 'recommendations-heading';
+    heading.textContent = 'Suggested Activities';
+    this.recommendationsInfo.appendChild(heading);
+
+    if (!result.hasSuggestions()) {
+      const fallback = document.createElement('p');
+      fallback.className = 'info-message';
+      fallback.textContent =
+        result.fallbackMessage ||
+        'No suitable activity suggestions are currently available.';
+      this.recommendationsInfo.appendChild(fallback);
+      this.recommendationsInfo.hidden = false;
+      return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'recommendations-list';
+
+    for (const item of result.suggestions) {
+      const card = document.createElement('article');
+      card.className = 'recommendation-item';
+
+      const badge = document.createElement('span');
+      badge.className = `recommendation-badge badge-${item.type}`;
+      badge.textContent = item.type;
+
+      const title = document.createElement('h3');
+      title.className = 'recommendation-title';
+      title.textContent = item.title;
+
+      const desc = document.createElement('p');
+      desc.className = 'recommendation-desc';
+      desc.textContent = item.description;
+
+      card.append(badge, title, desc);
+      list.appendChild(card);
+    }
+
+    this.recommendationsInfo.appendChild(list);
+    this.recommendationsInfo.hidden = false;
+  }
+
+  clearRecommendations() {
+    if (!this.recommendationsInfo) {
+      return;
+    }
+
+    this.recommendationsInfo.textContent = '';
+    this.recommendationsInfo.hidden = true;
   }
 
   renderCategoryChips() {
@@ -527,11 +617,14 @@ class HomeApp {
     this.weatherRequestToken += 1;
     this.isLoadingPois = false;
     this.destination = null;
+    this.currentCountry = null;
+    this.currentWeather = null;
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds.clear();
     this.clearCountryInfo();
     this.clearWeather();
+    this.clearRecommendations();
     this.poiResults.textContent = '';
     this.poiMessage.textContent = '';
     this.loadMoreButton.hidden = true;

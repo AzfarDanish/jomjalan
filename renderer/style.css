@@ -272,6 +272,66 @@ button:disabled {
   font-size: 15px;
 }
 
+/* Recommendations panel */
+.recommendations-heading {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recommendation-item {
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.recommendation-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.badge-indoor {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.badge-outdoor {
+  background-color: #e6f4ea;
+  color: #137333;
+}
+
+.badge-general {
+  background-color: #f1f3f4;
+  color: #5f6368;
+}
+
+.recommendation-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.recommendation-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #555555;
+  line-height: 1.4;
+}
+
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
