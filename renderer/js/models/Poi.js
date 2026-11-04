@@ -91,7 +91,11 @@ const CONDITION_PREFIXES = [
 ];
 
 // A Poi is one feature from the Geoapify Places API.
-class Poi {
+// It extends Location (inheriting name, latitude, longitude) and adds POI-specific data.
+const Destination = require('./Destination');
+const Location = Destination.Location;
+
+class Poi extends Location {
   constructor(feature) {
     const data = feature && feature.properties ? feature.properties : feature;
 
@@ -99,10 +103,10 @@ class Poi {
       throw new Error('Place data is incomplete.');
     }
 
-    this.name = data.name || data.address_line1 || 'Unnamed place';
+    const poiName = data.name || data.address_line1 || 'Unnamed place';
+    super(poiName, data.lat, data.lon);
+
     this.address = data.formatted || data.address_line1 || '';
-    this.latitude = data.lat;
-    this.longitude = data.lon;
     this.placeId = data.place_id || '';
     this.distance = typeof data.distance === 'number' ? data.distance : null;
     this.categories = Array.isArray(data.categories) ? data.categories : [];
