@@ -5,7 +5,7 @@ const { ActivityRecommender } = require('../logics/ActivityRecommender');
 const Trip = require('../models/Trip');
 
 class HomeApp {
-  constructor(geoapifyService, countryService, weatherService, currencyService, tripRepository) {
+  constructor(geoapifyService, countryService, weatherService, currencyService, tripRepository, unsplashService) {
     if (!geoapifyService || !countryService || !weatherService) {
       throw new Error(
         'HomeApp needs a Geoapify service, a country service and a weather service.'
@@ -17,6 +17,7 @@ class HomeApp {
     this.weatherService = weatherService;
     this.currencyService = currencyService;
     this.tripRepository = tripRepository;
+    this.unsplashService = unsplashService;
     this.categoryCatalog = new PlaceCategoryCatalog();
     this.activityRecommender = new ActivityRecommender();
     this.pageSize = geoapifyService.getPageSize();
@@ -42,6 +43,9 @@ class HomeApp {
     this.destinationTitle = document.getElementById('destinationTitle');
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
     this.saveTripBtn = document.getElementById('saveTripBtn');
+    this.destinationPhotos = document.getElementById('destinationPhotos');
+    this.photosGrid = document.getElementById('photosGrid');
+    this.photosMessage = document.getElementById('photosMessage');
     this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
     this.recommendationsInfo = document.getElementById('recommendationsInfo');
@@ -104,6 +108,7 @@ class HomeApp {
     this.countryRequestToken = 0;
     this.weatherRequestToken = 0;
     this.currencyRequestToken = 0;
+    this.photosRequestToken = 0;
     this.currenciesLoaded = false;
   }
 
@@ -265,10 +270,7 @@ class HomeApp {
         return;
       }
 
-      this.showDestinationMessage(
-        `Found ${destinations.length} destination(s) for "${query}". Click one to explore.`,
-        false
-      );
+      this.showDestinationMessage('', false);
       this.renderDestinations(destinations);
     } catch (error) {
       this.showDestinationMessage(error.message, true);
@@ -299,11 +301,7 @@ class HomeApp {
       formatted.className = 'destination-formatted';
       formatted.textContent = destination.formatted;
 
-      const action = document.createElement('span');
-      action.className = 'destination-action';
-      action.textContent = 'Explore places →';
-
-      button.append(type, name, formatted, action);
+      button.append(type, name, formatted);
       button.addEventListener('click', () => {
         this.openDestination(destination);
       });
@@ -329,13 +327,15 @@ class HomeApp {
     this.renderCategoryChips();
     this.clearRecommendations();
     this.clearCurrencyConverter();
+    this.clearPhotos();
     this.discoverView.hidden = true;
     this.destinationView.hidden = false;
     window.scrollTo(0, 0);
 
-    // Weather and country facts load in the background so places are not delayed.
+    // Weather, country facts, and photos load in the background so places are not delayed.
     this.loadWeather(destination);
     this.loadCountryInfo(destination);
+    this.loadPhotos(destination);
     await this.loadPois({ reset: true });
   }
 
@@ -421,6 +421,127 @@ class HomeApp {
 
     this.weatherInfo.textContent = '';
     this.weatherInfo.hidden = true;
+  }
+
+  clearPhotos() {
+    if (!this.destinationPhotos) {
+      return;
+    }
+
+    this.destinationPhotos.hidden = true;
+    if (this.photosGrid) {
+      this.photosGrid.textContent = '';
+    }
+    if (this.photosMessage) {
+      this.photosMessage.textContent = '';
+      this.photosMessage.hidden = true;
+    }
+  }
+
+  // Load photos from Unsplash for the destination asynchronously
+  async loadPhotos(destination) {
+    if (!this.destinationPhotos || !this.unsplashService) {
+      return;
+    }
+
+    if (!this.unsplashService.hasAccessKey()) {
+      return; // If user hasn't configured Unsplash key, keep section hidden without breaking page
+    }
+
+    const requestToken = ++this.photosRequestToken;
+    this.clearPhotos();
+    this.destinationPhotos.hidden = false;
+
+    // Show loading skeleton / indicator
+    if (this.photosMessage) {
+      this.photosMessage.textContent = 'Loading destination photography...';
+      this.photosMessage.className = 'photos-message photos-loading';
+      this.photosMessage.hidden = false;
+    }
+
+    try {
+      // Use clean destination query: name or city
+      const query = destination.isCountry()
+        ? destination.name
+        : (destination.name || destination.getDisplayName());
+
+      const photos = await this.unsplashService.searchPhotos(query, 4);
+
+      if (requestToken !== this.photosRequestToken) {
+        return; // Prevent outdated response from replacing newer search
+      }
+
+      if (photos.length === 0) {
+        if (this.photosMessage) {
+          this.photosMessage.textContent = `No photography found for "${query}".`;
+          this.photosMessage.className = 'photos-message';
+          this.photosMessage.hidden = false;
+        }
+        return;
+      }
+
+      this.renderPhotos(photos);
+    } catch (error) {
+      if (requestToken !== this.photosRequestToken) {
+        return;
+      }
+
+      if (this.photosMessage) {
+        this.photosMessage.textContent = error.message;
+        this.photosMessage.className = 'photos-message error-text';
+        this.photosMessage.hidden = false;
+      }
+    }
+  }
+
+  renderPhotos(photos) {
+    if (!this.photosGrid) {
+      return;
+    }
+
+    this.photosGrid.textContent = '';
+    if (this.photosMessage) {
+      this.photosMessage.hidden = true;
+    }
+
+    for (const photo of photos) {
+      const card = document.createElement('figure');
+      card.className = 'photo-card';
+
+      const img = document.createElement('img');
+      img.className = 'photo-img';
+      img.src = photo.urls.regular || photo.urls.small;
+      img.alt = photo.altDescription;
+      img.loading = 'lazy';
+
+      // Track download on click per Unsplash API terms
+      img.addEventListener('click', () => {
+        if (photo.links.downloadLocation) {
+          this.unsplashService.triggerDownload(photo.links.downloadLocation);
+        }
+      });
+
+      const caption = document.createElement('figcaption');
+      caption.className = 'photo-caption';
+
+      const photographerLink = document.createElement('a');
+      photographerLink.href = photo.getPhotographerAttributionUrl();
+      photographerLink.target = '_blank';
+      photographerLink.rel = 'noopener noreferrer';
+      photographerLink.textContent = photo.photographer.name;
+
+      const unsplashLink = document.createElement('a');
+      unsplashLink.href = photo.getUnsplashReferralUrl();
+      unsplashLink.target = '_blank';
+      unsplashLink.rel = 'noopener noreferrer';
+      unsplashLink.textContent = 'Unsplash';
+
+      caption.append('Photo by ', photographerLink, ' on ', unsplashLink);
+      card.append(img, caption);
+      this.photosGrid.appendChild(card);
+    }
+
+    this.destinationPhotos.hidden = false;
   }
 
   // Build the shared label/value grid used by the weather and country panels.
@@ -737,7 +858,7 @@ class HomeApp {
 
     const rateDate = document.createElement('span');
     rateDate.className = 'currency-rate-date';
-    rateDate.textContent = `Rates updated: ${conversion.getDateLabel()} (via European Central Bank)`;
+    rateDate.textContent = `ECB · ${conversion.getDateLabel()}`;
 
     ratesBox.append(forwardRate, inverseRate, rateDate);
 
@@ -994,6 +1115,7 @@ class HomeApp {
     this.requestToken += 1;
     this.countryRequestToken += 1;
     this.weatherRequestToken += 1;
+    this.photosRequestToken += 1;
     this.isLoadingPois = false;
     this.destination = null;
     this.currentCountry = null;
@@ -1005,6 +1127,8 @@ class HomeApp {
     this.clearCountryInfo();
     this.clearWeather();
     this.clearRecommendations();
+    this.clearCurrencyConverter();
+    this.clearPhotos();
     this.poiResults.textContent = '';
     this.poiMessage.textContent = '';
     this.loadMoreButton.hidden = true;
@@ -1133,18 +1257,16 @@ class HomeApp {
     // Daily budget calculation label
     const dailyBudget = document.createElement('p');
     dailyBudget.className = 'trip-daily-budget';
-    dailyBudget.textContent = `Estimated daily budget: ${trip.getFormattedDailyBudget()} / day`;
+    dailyBudget.textContent = `${trip.getFormattedDailyBudget()} / day`;
 
     // Notes if present
     let notesElem = null;
     if (trip.notes) {
       notesElem = document.createElement('div');
       notesElem.className = 'trip-notes';
-      const notesTitle = document.createElement('strong');
-      notesTitle.textContent = 'Notes: ';
       const notesContent = document.createElement('span');
       notesContent.textContent = trip.notes;
-      notesElem.append(notesTitle, notesContent);
+      notesElem.append(notesContent);
     }
 
     // Recommendations preview if attached
@@ -1153,7 +1275,7 @@ class HomeApp {
       recsElem = document.createElement('div');
       recsElem.className = 'trip-recs-section';
       const recsHeading = document.createElement('h4');
-      recsHeading.textContent = `Attached Activity Suggestions (${trip.recommendations.length}):`;
+      recsHeading.textContent = `Activities (${trip.recommendations.length}):`;
       const recsList = document.createElement('ul');
       recsList.className = 'trip-recs-list';
 
@@ -1172,7 +1294,7 @@ class HomeApp {
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'button-edit';
-    editBtn.textContent = '✏️ Edit Trip';
+    editBtn.textContent = 'Edit';
     editBtn.addEventListener('click', () => {
       this.openEditTripModal(trip.id);
     });
@@ -1180,7 +1302,7 @@ class HomeApp {
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'button-delete';
-    deleteBtn.textContent = '🗑️ Delete';
+    deleteBtn.textContent = 'Delete';
     deleteBtn.addEventListener('click', () => {
       this.openDeleteModal(trip.id, trip.destinationName);
     });

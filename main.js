@@ -61,4 +61,14 @@ ipcMain.handle('get-geoapify-key', () => {
   );
 });
 
+ipcMain.handle('get-unsplash-key', () => {
+  return (
+    readEnvValue('unsplashKey') ||
+    readEnvValue('UNSPLASH_ACCESS_KEY') ||
+    readEnvValue('Access Key') ||
+    process.env.UNSPLASH_ACCESS_KEY ||
+    ''
+  );
+});
+
 app.whenReady().then(createMainWindow);

@@ -24,20 +24,15 @@
 
     <section id="discoverView" class="view">
       <header class="home-header">
-        <p class="eyebrow">Explore the world</p>
-        <h1>Discover places to visit</h1>
-        <p class="tagline">
-          Search for a country or city, then explore its attractions, museums,
-          sights and other points of interest.
-        </p>
+        <h1>Discover Places</h1>
       </header>
 
-      <!-- The search only finds destinations. Places load after a click. -->
+      <!-- Search destinations -->
       <form id="destinationForm" class="search-form">
         <input
           type="text"
           id="destinationInput"
-          placeholder="Search a country or city (e.g. Japan, Kuala Lumpur, London)"
+          placeholder="Search country or city (e.g. Japan, London, Tokyo)"
           aria-label="Country or city"
           autocomplete="off"
         />
@@ -46,7 +41,6 @@
 
       <!-- Quick destination suggestion chips -->
       <div class="quick-destinations" aria-label="Suggested destinations">
-        <span class="quick-label">Trending:</span>
         <button type="button" class="quick-chip" data-query="Tokyo">🇯🇵 Tokyo</button>
         <button type="button" class="quick-chip" data-query="Kuala Lumpur">🇲🇾 Kuala Lumpur</button>
         <button type="button" class="quick-chip" data-query="Paris">🇫🇷 Paris</button>
@@ -64,11 +58,11 @@
     </section>
 
     <section id="destinationView" class="view" hidden>
-      <button type="button" id="backBtn" class="back-button">← Back to search</button>
+      <button type="button" id="backBtn" class="back-button">← Back</button>
 
       <div class="destination-header-row">
         <header class="destination-header">
-          <p id="destinationType" class="eyebrow"></p>
+          <p id="destinationType" class="eyebrow" hidden></p>
           <h1 id="destinationTitle"></h1>
           <p id="destinationSubtitle" class="tagline"></p>
         </header>
@@ -76,6 +70,16 @@
           <button type="button" id="saveTripBtn" class="primary-btn save-trip-btn">➕ Save as Trip Plan</button>
         </div>
       </div>
+
+      <!-- Destination Photos Gallery from Unsplash API -->
+      <section id="destinationPhotos" class="destination-photos-section" aria-live="polite" hidden>
+        <div class="photos-header">
+          <h2 class="photos-title">Photos</h2>
+          <span class="photos-attribution-note"><a href="https://unsplash.com/?utm_source=jomjalan&utm_medium=referral" target="_blank" rel="noopener noreferrer">via Unsplash</a></span>
+        </div>
+        <div id="photosGrid" class="photos-grid"></div>
+        <p id="photosMessage" class="photos-message" role="status"></p>
+      </section>
 
       <!-- Current weather for the selected country or city. -->
       <section
@@ -109,8 +113,7 @@
         hidden
       >
         <div class="converter-header">
-          <h2 class="converter-title">Travel Budget Currency Converter</h2>
-          <p class="tagline">Convert between your home currency and local destination currency using real-time rates</p>
+          <h2 class="converter-title">Currency Converter</h2>
         </div>
         <form id="currencyForm" class="currency-form">
           <div class="currency-field">
@@ -121,7 +124,7 @@
               min="0.01"
               step="any"
               value="100"
-              placeholder="e.g. 100"
+              placeholder="100"
               required
             />
           </div>
@@ -160,9 +163,7 @@
     <section id="tripsView" class="view" hidden>
       <header class="trips-header">
         <div class="trips-header-text">
-          <p class="eyebrow">Personal Itinerary</p>
-          <h1>My Saved Trips</h1>
-          <p class="tagline">View, plan, edit, and manage your saved travel itineraries.</p>
+          <h1>My Trips</h1>
         </div>
       </header>
 
@@ -171,8 +172,7 @@
       <!-- Empty State -->
       <div id="tripsEmptyState" class="empty-state" hidden>
         <span class="empty-icon">🗺️</span>
-        <h2>No travel plans yet</h2>
-        <p>You haven't saved any trips yet. Discover destinations and click "Save as Trip Plan" to start planning!</p>
+        <h2>No saved trips yet</h2>
         <button type="button" id="emptyStateDiscoverBtn" class="primary-btn">Explore Destinations</button>
       </div>
 
