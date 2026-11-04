@@ -1,6 +1,10 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const fs = require('fs');
+const ItineraryStore = require('./main/ItineraryStore');
+
+const itineraryStore = new ItineraryStore(
+  path.join(__dirname, 'data', 'itineraries.json')
+);
 
 let mainWindow;
 let itineraryWindow;
@@ -14,7 +18,7 @@ function createMainWindow() {
       contextIsolation: false,
     },
   });
-  mainWindow.loadFile('renderer/index.html');
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
 function createItineraryWindow(country) {
@@ -27,7 +31,7 @@ function createItineraryWindow(country) {
     },
   });
 
-  itineraryWindow.loadFile('renderer/itinerary.html');
+  itineraryWindow.loadFile(path.join(__dirname, 'renderer', 'itinerary.html'));
 
   itineraryWindow.webContents.on('did-finish-load', () => {
     itineraryWindow.webContents.send('country-selected', country);
@@ -38,16 +42,13 @@ ipcMain.on('open-itinerary-window', (event, country) => {
   createItineraryWindow(country);
 });
 
-ipcMain.on('save-itinerary', (event, data) => {
-  const filePath = path.join(__dirname, 'data', 'itineraries.json');
-  let itineraries = [];
-
-  if (fs.existsSync(filePath)) {
-    itineraries = JSON.parse(fs.readFileSync(filePath));
+ipcMain.handle('save-itinerary', (event, data) => {
+  try {
+    itineraryStore.add(data);
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.message };
   }
-
-  itineraries.push(data);
-  fs.writeFileSync(filePath, JSON.stringify(itineraries, null, 2));
 });
 
 app.whenReady().then(createMainWindow);

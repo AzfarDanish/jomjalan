@@ -11,6 +11,56 @@ body {
   align-items: center;
 }
 
+/* Leave room on the left for the fixed sidebar (main window only). */
+body.with-sidebar {
+  padding-left: 220px;
+}
+
+/* Fixed, non-collapsible sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 220px;
+  background-color: #f4f4f4;
+  border-right: 1px solid #cccccc;
+  box-sizing: border-box;
+  padding-top: 24px;
+}
+
+.sidebar-header {
+  text-align: center;
+  padding: 0 16px 20px;
+  border-bottom: 1px solid #cccccc;
+}
+
+.sidebar-header h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding-top: 12px;
+}
+
+.sidebar-nav .nav-link {
+  padding: 10px 20px;
+  color: #222222;
+  text-decoration: none;
+}
+
+.sidebar-nav .nav-link:hover {
+  background-color: #e6e6e6;
+}
+
+.sidebar-nav .nav-link.active {
+  background-color: #dddddd;
+  font-weight: bold;
+}
+
 /* margin: auto keeps the search area centered when the page is short,
    and lets the page scroll normally when many results are shown. */
 .app {
