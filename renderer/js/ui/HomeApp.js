@@ -3,12 +3,13 @@
 const PlaceCategoryCatalog = require('../logics/PlaceCategoryCatalog');
 
 class HomeApp {
-  constructor(geoapifyService) {
-    if (!geoapifyService) {
-      throw new Error('HomeApp needs a Geoapify service.');
+  constructor(geoapifyService, countryService) {
+    if (!geoapifyService || !countryService) {
+      throw new Error('HomeApp needs a Geoapify service and a country service.');
     }
 
     this.geoapifyService = geoapifyService;
+    this.countryService = countryService;
     this.categoryCatalog = new PlaceCategoryCatalog();
     this.pageSize = geoapifyService.getPageSize();
 
@@ -24,6 +25,7 @@ class HomeApp {
     this.destinationType = document.getElementById('destinationType');
     this.destinationTitle = document.getElementById('destinationTitle');
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
+    this.countryInfo = document.getElementById('countryInfo');
     this.categoryFilters = document.getElementById('categoryFilters');
     this.poiMessage = document.getElementById('poiMessage');
     this.poiResults = document.getElementById('poiResults');
@@ -36,6 +38,7 @@ class HomeApp {
     this.offset = 0;
     this.seenPoiIds = new Set();
     this.requestToken = 0;
+    this.countryRequestToken = 0;
   }
 
   start() {
@@ -155,7 +158,117 @@ class HomeApp {
     this.destinationView.hidden = false;
     window.scrollTo(0, 0);
 
+    // Country facts load in the background so places are not delayed.
+    this.loadCountryInfo(destination);
     await this.loadPois({ reset: true });
+  }
+
+  // Ask the country service about the destination's country. This runs
+  // separately from the place search, so one failure does not block the other.
+  async loadCountryInfo(destination) {
+    if (!this.countryInfo) {
+      return;
+    }
+
+    const requestToken = ++this.countryRequestToken;
+    this.clearCountryInfo();
+
+    if (!destination.countryCode) {
+      return;
+    }
+
+    try {
+      const country = await this.countryService.getCountry(
+        destination.countryCode
+      );
+
+      if (requestToken !== this.countryRequestToken) {
+        return;
+      }
+
+      this.renderCountryInfo(country, destination);
+    } catch (error) {
+      if (requestToken !== this.countryRequestToken) {
+        return;
+      }
+
+      this.showCountryInfoMessage(error.message);
+    }
+  }
+
+  renderCountryInfo(country, destination) {
+    const facts = [
+      { label: 'Capital', value: country.capital },
+      { label: 'Region', value: country.getRegionLabel() },
+      { label: 'Population', value: country.getPopulationLabel() },
+      { label: 'Area', value: country.getAreaLabel() },
+      { label: 'Currency', value: country.getCurrencyLabel() },
+      { label: 'Languages', value: country.getLanguagesLabel() },
+      { label: 'Calling code', value: country.getCallingCodeLabel() },
+      { label: 'Time zone', value: country.getTimeZoneLabel() },
+    ].filter((fact) => fact.value);
+
+    this.countryInfo.textContent = '';
+
+    const summary = document.createElement('div');
+    summary.className = 'country-info-summary';
+
+    const flag = document.createElement('span');
+    flag.className = 'country-info-flag';
+    flag.textContent = country.flag || '🏳️';
+    summary.appendChild(flag);
+
+    // A country page already shows the name in the heading, so only add it
+    // when the destination is a city inside that country.
+    if (!destination.isCountry()) {
+      const name = document.createElement('span');
+      name.className = 'country-info-name';
+      name.textContent = country.name;
+      summary.appendChild(name);
+    }
+
+    const list = document.createElement('dl');
+    list.className = 'country-info-facts';
+
+    for (const fact of facts) {
+      const item = document.createElement('div');
+      item.className = 'country-info-fact';
+
+      const label = document.createElement('dt');
+      label.textContent = fact.label;
+
+      const value = document.createElement('dd');
+      value.textContent = fact.value;
+
+      item.append(label, value);
+      list.appendChild(item);
+    }
+
+    this.countryInfo.append(summary, list);
+    this.countryInfo.hidden = false;
+  }
+
+  showCountryInfoMessage(text) {
+    if (!this.countryInfo) {
+      return;
+    }
+
+    const message = document.createElement('p');
+    message.className = 'country-info-message';
+    message.textContent = text;
+
+    this.countryInfo.textContent = '';
+    this.countryInfo.appendChild(message);
+    this.countryInfo.hidden = false;
+  }
+
+  clearCountryInfo() {
+    if (!this.countryInfo) {
+      return;
+    }
+
+    this.countryInfo.textContent = '';
+    this.countryInfo.hidden = true;
   }
 
   renderCategoryChips() {
@@ -319,11 +432,13 @@ class HomeApp {
   showDiscoverView() {
     // Invalidate any request that is still running.
     this.requestToken += 1;
+    this.countryRequestToken += 1;
     this.isLoadingPois = false;
     this.destination = null;
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds.clear();
+    this.clearCountryInfo();
     this.poiResults.textContent = '';
     this.poiMessage.textContent = '';
     this.loadMoreButton.hidden = true;

@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
 const GeoapifyService = require('./js/services/GeoapifyService');
+const CountryService = require('./js/services/CountryService');
 const HomeApp = require('./js/ui/HomeApp');
 
 async function start() {
@@ -12,7 +13,8 @@ async function start() {
   }
 
   const geoapifyService = new GeoapifyService(apiKey);
-  const homeApp = new HomeApp(geoapifyService);
+  const countryService = new CountryService();
+  const homeApp = new HomeApp(geoapifyService, countryService);
 
   homeApp.start();
 }

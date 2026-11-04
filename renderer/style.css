@@ -230,6 +230,62 @@ button:disabled {
   margin-bottom: 0;
 }
 
+/* Country facts from countries.dev, shown above the category chips. */
+.country-info {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fafafa;
+  text-align: left;
+}
+
+.country-info-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.country-info-flag {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.country-info-name {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.country-info-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.country-info-fact dt {
+  margin: 0;
+  color: #777777;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.country-info-fact dd {
+  margin: 2px 0 0;
+  color: #333333;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.country-info-message {
+  margin: 0;
+  color: #777777;
+  font-size: 13px;
+}
+
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
