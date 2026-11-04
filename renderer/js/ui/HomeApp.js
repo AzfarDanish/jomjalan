@@ -4,7 +4,7 @@ const PlaceCategoryCatalog = require('../logics/PlaceCategoryCatalog');
 const { ActivityRecommender } = require('../logics/ActivityRecommender');
 
 class HomeApp {
-  constructor(geoapifyService, countryService, weatherService) {
+  constructor(geoapifyService, countryService, weatherService, currencyService) {
     if (!geoapifyService || !countryService || !weatherService) {
       throw new Error(
         'HomeApp needs a Geoapify service, a country service and a weather service.'
@@ -14,6 +14,7 @@ class HomeApp {
     this.geoapifyService = geoapifyService;
     this.countryService = countryService;
     this.weatherService = weatherService;
+    this.currencyService = currencyService;
     this.categoryCatalog = new PlaceCategoryCatalog();
     this.activityRecommender = new ActivityRecommender();
     this.pageSize = geoapifyService.getPageSize();
@@ -33,6 +34,14 @@ class HomeApp {
     this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
     this.recommendationsInfo = document.getElementById('recommendationsInfo');
+    this.currencyConverter = document.getElementById('currencyConverter');
+    this.currencyForm = document.getElementById('currencyForm');
+    this.currencyAmount = document.getElementById('currencyAmount');
+    this.currencyFrom = document.getElementById('currencyFrom');
+    this.currencyTo = document.getElementById('currencyTo');
+    this.currencySwapBtn = document.getElementById('currencySwapBtn');
+    this.currencyResult = document.getElementById('currencyResult');
+    this.currencyMessage = document.getElementById('currencyMessage');
     this.categoryFilters = document.getElementById('categoryFilters');
     this.poiMessage = document.getElementById('poiMessage');
     this.poiResults = document.getElementById('poiResults');
@@ -49,6 +58,8 @@ class HomeApp {
     this.requestToken = 0;
     this.countryRequestToken = 0;
     this.weatherRequestToken = 0;
+    this.currencyRequestToken = 0;
+    this.currenciesLoaded = false;
   }
 
   start() {
@@ -64,6 +75,31 @@ class HomeApp {
     this.loadMoreButton.addEventListener('click', () => {
       this.loadPois({ append: true });
     });
+
+    if (this.currencyForm) {
+      this.currencyForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        this.performCurrencyConversion();
+      });
+    }
+
+    if (this.currencySwapBtn) {
+      this.currencySwapBtn.addEventListener('click', () => {
+        this.swapCurrencies();
+      });
+    }
+
+    if (this.currencyFrom) {
+      this.currencyFrom.addEventListener('change', () => {
+        this.performCurrencyConversion();
+      });
+    }
+
+    if (this.currencyTo) {
+      this.currencyTo.addEventListener('change', () => {
+        this.performCurrencyConversion();
+      });
+    }
 
     if (!this.geoapifyService.hasApiKey()) {
       this.showDestinationMessage(
@@ -167,6 +203,7 @@ class HomeApp {
 
     this.renderCategoryChips();
     this.clearRecommendations();
+    this.clearCurrencyConverter();
     this.discoverView.hidden = true;
     this.destinationView.hidden = false;
     window.scrollTo(0, 0);
@@ -309,6 +346,7 @@ class HomeApp {
       this.currentCountry = country;
       this.renderCountryInfo(country, destination);
       this.updateRecommendations();
+      this.initCurrencyConverter(country);
     } catch (error) {
       if (requestToken !== this.countryRequestToken) {
         return;
@@ -317,6 +355,7 @@ class HomeApp {
       this.currentCountry = null;
       this.showCountryInfoMessage(error.message);
       this.updateRecommendations();
+      this.initCurrencyConverter(null);
     }
   }
 
@@ -376,6 +415,220 @@ class HomeApp {
 
     this.countryInfo.textContent = '';
     this.countryInfo.hidden = true;
+  }
+
+  clearCurrencyConverter() {
+    if (!this.currencyConverter) {
+      return;
+    }
+
+    this.currencyConverter.hidden = true;
+    if (this.currencyResult) {
+      this.currencyResult.textContent = '';
+      this.currencyResult.hidden = true;
+    }
+    if (this.currencyMessage) {
+      this.currencyMessage.textContent = '';
+      this.currencyMessage.className = 'currency-message';
+    }
+  }
+
+  // Setup the currency options and initiate the initial calculation.
+  async initCurrencyConverter(country) {
+    if (!this.currencyConverter || !this.currencyService) {
+      return;
+    }
+
+    const requestToken = ++this.currencyRequestToken;
+    this.clearCurrencyConverter();
+    this.currencyConverter.hidden = false;
+
+    try {
+      const currencies = await this.currencyService.getCurrencies();
+      if (requestToken !== this.currencyRequestToken) {
+        return;
+      }
+
+      this.populateCurrencyDropdowns(currencies);
+
+      // Determine local destination currency if available in Frankfurter API.
+      let destinationCurrencyCode = '';
+      if (country && Array.isArray(country.currencies) && country.currencies[0]) {
+        destinationCurrencyCode = (country.currencies[0].code || '').toUpperCase();
+      }
+
+      // Default Base currency: 'MYR' (since this is JomJalan in Malaysia) or 'USD' if MYR isn't found.
+      const defaultBase = currencies['MYR'] ? 'MYR' : 'USD';
+      if (this.currencyFrom.value !== defaultBase && currencies[defaultBase]) {
+        this.currencyFrom.value = defaultBase;
+      }
+
+      // If destination currency is supported, select it as 'To'.
+      if (destinationCurrencyCode && currencies[destinationCurrencyCode]) {
+        this.currencyTo.value = destinationCurrencyCode;
+        this.showCurrencyMessage('', false);
+      } else if (destinationCurrencyCode) {
+        // Destination currency not supported by Frankfurter
+        const fallbackTo = defaultBase === 'USD' ? 'EUR' : 'USD';
+        this.currencyTo.value = fallbackTo;
+        this.showCurrencyMessage(
+          `Note: Local currency (${destinationCurrencyCode}) is not tracked by the European Central Bank. Showing ${fallbackTo} instead.`,
+          false
+        );
+      } else {
+        this.currencyTo.value = defaultBase === 'USD' ? 'EUR' : 'USD';
+      }
+
+      await this.performCurrencyConversion();
+    } catch (error) {
+      if (requestToken !== this.currencyRequestToken) {
+        return;
+      }
+      this.showCurrencyMessage(error.message, true);
+    }
+  }
+
+  populateCurrencyDropdowns(currencies) {
+    if (this.currenciesLoaded) {
+      return;
+    }
+
+    const entries = Object.entries(currencies).sort(([a], [b]) => a.localeCompare(b));
+
+    const buildOptions = () => {
+      const fragment = document.createDocumentFragment();
+      for (const [code, name] of entries) {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = `${code} — ${name}`;
+        fragment.appendChild(option);
+      }
+      return fragment;
+    };
+
+    this.currencyFrom.textContent = '';
+    this.currencyFrom.appendChild(buildOptions());
+
+    this.currencyTo.textContent = '';
+    this.currencyTo.appendChild(buildOptions());
+
+    this.currenciesLoaded = true;
+  }
+
+  swapCurrencies() {
+    if (!this.currencyFrom || !this.currencyTo) {
+      return;
+    }
+
+    const temp = this.currencyFrom.value;
+    this.currencyFrom.value = this.currencyTo.value;
+    this.currencyTo.value = temp;
+
+    this.performCurrencyConversion();
+  }
+
+  async performCurrencyConversion() {
+    if (!this.currencyService || !this.currencyConverter) {
+      return;
+    }
+
+    const amountValue = this.currencyAmount ? this.currencyAmount.value.trim() : '';
+    const fromCode = this.currencyFrom ? this.currencyFrom.value : '';
+    const toCode = this.currencyTo ? this.currencyTo.value : '';
+
+    if (!amountValue) {
+      this.showCurrencyMessage('Please enter an amount to convert.', true);
+      if (this.currencyResult) {
+        this.currencyResult.hidden = true;
+      }
+      return;
+    }
+
+    const amount = Number(amountValue);
+    if (isNaN(amount) || amount <= 0) {
+      this.showCurrencyMessage('Please enter a valid amount greater than zero.', true);
+      if (this.currencyResult) {
+        this.currencyResult.hidden = true;
+      }
+      return;
+    }
+
+    if (!fromCode || !toCode) {
+      this.showCurrencyMessage('Please choose both source and target currencies.', true);
+      return;
+    }
+
+    const requestToken = ++this.currencyRequestToken;
+
+    try {
+      const conversion = await this.currencyService.convert(fromCode, toCode, amount);
+      if (requestToken !== this.currencyRequestToken) {
+        return;
+      }
+
+      this.renderCurrencyResult(conversion);
+      this.showCurrencyMessage('', false);
+    } catch (error) {
+      if (requestToken !== this.currencyRequestToken) {
+        return;
+      }
+      if (this.currencyResult) {
+        this.currencyResult.hidden = true;
+      }
+      this.showCurrencyMessage(error.message, true);
+    }
+  }
+
+  renderCurrencyResult(conversion) {
+    if (!this.currencyResult) {
+      return;
+    }
+
+    this.currencyResult.textContent = '';
+
+    const primaryBox = document.createElement('div');
+    primaryBox.className = 'currency-primary-result';
+
+    const inputLabel = document.createElement('div');
+    inputLabel.className = 'currency-source-amount';
+    inputLabel.textContent = `${conversion.getFormattedOriginalAmount()} =`;
+
+    const convertedLabel = document.createElement('div');
+    convertedLabel.className = 'currency-target-amount';
+    convertedLabel.textContent = conversion.getFormattedConvertedAmount();
+
+    primaryBox.append(inputLabel, convertedLabel);
+
+    const ratesBox = document.createElement('div');
+    ratesBox.className = 'currency-rate-details';
+
+    const forwardRate = document.createElement('span');
+    forwardRate.className = 'currency-rate-item';
+    forwardRate.textContent = conversion.getExchangeRateLabel();
+
+    const inverseRate = document.createElement('span');
+    inverseRate.className = 'currency-rate-item';
+    inverseRate.textContent = conversion.getInverseRateLabel();
+
+    const rateDate = document.createElement('span');
+    rateDate.className = 'currency-rate-date';
+    rateDate.textContent = `Rates updated: ${conversion.getDateLabel()} (via European Central Bank)`;
+
+    ratesBox.append(forwardRate, inverseRate, rateDate);
+
+    this.currencyResult.append(primaryBox, ratesBox);
+    this.currencyResult.hidden = false;
+  }
+
+  showCurrencyMessage(text, isError) {
+    if (!this.currencyMessage) {
+      return;
+    }
+
+    this.currencyMessage.textContent = text;
+    this.currencyMessage.className = isError
+      ? 'currency-message error-text'
+      : 'currency-message info-note';
   }
 
   // Update activity suggestions whenever new weather or country data arrives.

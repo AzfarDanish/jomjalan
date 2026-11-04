@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const GeoapifyService = require('./js/services/GeoapifyService');
 const CountryService = require('./js/services/CountryService');
 const OpenMeteoService = require('./js/services/OpenMeteoService');
+const CurrencyService = require('./js/services/CurrencyService');
 const HomeApp = require('./js/ui/HomeApp');
 
 async function start() {
@@ -16,7 +17,13 @@ async function start() {
   const geoapifyService = new GeoapifyService(apiKey);
   const countryService = new CountryService();
   const weatherService = new OpenMeteoService();
-  const homeApp = new HomeApp(geoapifyService, countryService, weatherService);
+  const currencyService = new CurrencyService();
+  const homeApp = new HomeApp(
+    geoapifyService,
+    countryService,
+    weatherService,
+    currencyService
+  );
 
   homeApp.start();
 }

@@ -72,6 +72,45 @@
         hidden
       ></section>
 
+      <!-- Currency converter using Frankfurter API for budget calculations. -->
+      <section
+        id="currencyConverter"
+        class="info-panel currency-panel"
+        aria-live="polite"
+        hidden
+      >
+        <div class="converter-header">
+          <h2 class="converter-title">Travel Budget Currency Converter</h2>
+          <p class="tagline">Convert between your home currency and local destination currency using real-time rates</p>
+        </div>
+        <form id="currencyForm" class="currency-form">
+          <div class="currency-field">
+            <label for="currencyAmount">Amount</label>
+            <input
+              type="number"
+              id="currencyAmount"
+              min="0.01"
+              step="any"
+              value="100"
+              placeholder="e.g. 100"
+              required
+            />
+          </div>
+          <div class="currency-field">
+            <label for="currencyFrom">From</label>
+            <select id="currencyFrom"></select>
+          </div>
+          <button type="button" id="currencySwapBtn" class="currency-swap-btn" title="Swap currencies" aria-label="Swap currencies">⇄</button>
+          <div class="currency-field">
+            <label for="currencyTo">To</label>
+            <select id="currencyTo"></select>
+          </div>
+          <button type="submit" id="currencyConvertBtn">Convert</button>
+        </form>
+        <div id="currencyResult" class="currency-result" hidden></div>
+        <p id="currencyMessage" class="currency-message" role="status"></p>
+      </section>
+
       <div
         id="categoryFilters"
         class="filter-chips"

@@ -2,7 +2,8 @@
 # Operating System Files
 # ==========================================
 # macOS
-PROMPT.md
+# PROMPT.md
+# AGENTS.md
 .DS_Store
 .AppleDouble
 .LSOverride

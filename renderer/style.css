@@ -405,6 +405,160 @@ button:disabled {
   text-align: center;
 }
 
+/* ============================================
+   Currency Converter Panel
+   ============================================ */
+
+.currency-panel {
+  background-color: #f7f9fc;
+  border-color: #dbe2ea;
+}
+
+.converter-header {
+  margin-bottom: 14px;
+}
+
+.converter-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 4px;
+  color: #1a202c;
+}
+
+.currency-panel .tagline {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.currency-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.currency-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.currency-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.currency-field input,
+.currency-field select {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #1e293b;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.currency-field input[type="number"] {
+  width: 120px;
+}
+
+.currency-field select {
+  max-width: 220px;
+  cursor: pointer;
+}
+
+.currency-swap-btn {
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  height: 38px;
+  cursor: pointer;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.currency-swap-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.currency-form button[type="submit"] {
+  height: 38px;
+  padding: 8px 16px;
+  font-size: 14px;
+  align-self: flex-end;
+}
+
+.currency-result {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.currency-primary-result {
+  margin-bottom: 8px;
+}
+
+.currency-source-amount {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.currency-target-amount {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.currency-rate-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.currency-rate-item {
+  font-weight: 500;
+  color: #334155;
+}
+
+.currency-rate-date {
+  color: #94a3b8;
+}
+
+.currency-message {
+  margin: 8px 0 0;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.info-note {
+  color: #64748b;
+  font-style: italic;
+}
+
 @media (max-width: 760px) {
   .home-app {
     width: 94%;
