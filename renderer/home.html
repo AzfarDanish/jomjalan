@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JomJalan — Discover</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png" />
+</head>
+<body>
+  <main class="app home-app">
+    <section id="discoverView" class="view">
+      <header class="home-header">
+        <p class="eyebrow">Explore the world</p>
+        <h1>Discover places to visit</h1>
+        <p class="tagline">
+          Search for a country or city, then explore its attractions, museums,
+          sights and other points of interest.
+        </p>
+      </header>
+
+      <!-- The search only finds destinations. Places load after a click. -->
+      <form id="destinationForm" class="search-form">
+        <input
+          type="text"
+          id="destinationInput"
+          placeholder="Search a country or city (e.g. Japan, Kuala Lumpur)"
+          aria-label="Country or city"
+          autocomplete="off"
+        />
+        <button type="submit" id="destinationSearchBtn">Search</button>
+      </form>
+
+      <p id="destinationMessage" class="message" role="status"></p>
+
+      <section
+        id="destinationResults"
+        class="destination-results"
+        aria-live="polite"
+      ></section>
+    </section>
+
+    <section id="destinationView" class="view" hidden>
+      <button type="button" id="backBtn" class="back-button">← Back to search</button>
+
+      <header class="destination-header">
+        <p id="destinationType" class="eyebrow"></p>
+        <h1 id="destinationTitle"></h1>
+        <p id="destinationSubtitle" class="tagline"></p>
+      </header>
+
+      <div
+        id="categoryFilters"
+        class="filter-chips"
+        role="group"
+        aria-label="Filter places by category"
+      ></div>
+
+      <p id="poiMessage" class="message" role="status"></p>
+
+      <section id="poiResults" class="poi-grid" aria-live="polite"></section>
+
+      <div class="load-more-wrap">
+        <button type="button" id="loadMoreBtn" hidden>Load more places</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="home.js"></script>
+</body>
+</html>

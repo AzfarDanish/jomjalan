@@ -1,13 +1,12 @@
 // WeatherApp handles the search page: reading the form, showing messages,
 // and displaying one result card for every matching place.
 class WeatherApp {
-  constructor(weatherService, itineraryService) {
-    if (!weatherService || !itineraryService) {
-      throw new Error('WeatherApp needs a weather service and an itinerary service.');
+  constructor(weatherService) {
+    if (!weatherService) {
+      throw new Error('WeatherApp needs a weather service.');
     }
 
     this.weatherService = weatherService;
-    this.itineraryService = itineraryService;
     this.form = document.getElementById('searchForm');
     this.input = document.getElementById('placeInput');
     this.searchButton = document.getElementById('searchBtn');
@@ -109,14 +108,6 @@ class WeatherApp {
       errorText.textContent = `Weather unavailable: ${errorMessage}`;
       card.appendChild(errorText);
     }
-
-    const itineraryButton = document.createElement('button');
-    itineraryButton.type = 'button';
-    itineraryButton.textContent = 'Create Itinerary';
-    itineraryButton.addEventListener('click', () => {
-      this.itineraryService.openItinerary(place.getDisplayName());
-    });
-    card.appendChild(itineraryButton);
 
     return card;
   }

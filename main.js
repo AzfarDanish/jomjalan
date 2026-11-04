@@ -1,13 +1,44 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const ItineraryStore = require('./main/ItineraryStore');
-
-const itineraryStore = new ItineraryStore(
-  path.join(__dirname, 'data', 'itineraries.json')
-);
+const fs = require('fs');
 
 let mainWindow;
-let itineraryWindow;
+
+// Read one value from .env.local so secrets do not have to live in the
+// renderer source. Process environment variables are used as a fallback.
+function readEnvValue(name) {
+  const envPath = path.join(__dirname, '.env.local');
+
+  if (fs.existsSync(envPath)) {
+    try {
+      const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (!trimmed || trimmed.startsWith('#')) {
+          continue;
+        }
+
+        const separator = trimmed.indexOf('=');
+
+        if (separator === -1) {
+          continue;
+        }
+
+        const key = trimmed.slice(0, separator).trim();
+
+        if (key === name) {
+          return trimmed.slice(separator + 1).trim();
+        }
+      }
+    } catch (error) {
+      // Fall through to the process environment.
+    }
+  }
+
+  return process.env[name] || '';
+}
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -18,37 +49,16 @@ function createMainWindow() {
       contextIsolation: false,
     },
   });
-  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'home.html'));
 }
 
-function createItineraryWindow(country) {
-  itineraryWindow = new BrowserWindow({
-    width: 600,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  });
-
-  itineraryWindow.loadFile(path.join(__dirname, 'renderer', 'itinerary.html'));
-
-  itineraryWindow.webContents.on('did-finish-load', () => {
-    itineraryWindow.webContents.send('country-selected', country);
-  });
-}
-
-ipcMain.on('open-itinerary-window', (event, country) => {
-  createItineraryWindow(country);
-});
-
-ipcMain.handle('save-itinerary', (event, data) => {
-  try {
-    itineraryStore.add(data);
-    return { success: true };
-  } catch (error) {
-    return { success: false, message: error.message };
-  }
+ipcMain.handle('get-geoapify-key', () => {
+  return (
+    readEnvValue('geoapifyKey') ||
+    readEnvValue('GEOAPIFY_API_KEY') ||
+    process.env.GEOAPIFY_API_KEY ||
+    ''
+  );
 });
 
 app.whenReady().then(createMainWindow);
