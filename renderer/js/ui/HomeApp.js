@@ -127,6 +127,18 @@ class HomeApp {
       });
     }
 
+    // Quick destination recommendation chips
+    const quickChips = document.querySelectorAll('.quick-chip');
+    quickChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const query = chip.dataset.query;
+        if (query && this.destinationInput) {
+          this.destinationInput.value = query;
+          this.searchDestinations();
+        }
+      });
+    });
+
     // Save as Trip Plan button on Destination page
     if (this.saveTripBtn) {
       this.saveTripBtn.addEventListener('click', () => {

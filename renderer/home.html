@@ -37,12 +37,22 @@
         <input
           type="text"
           id="destinationInput"
-          placeholder="Search a country or city (e.g. Japan, Kuala Lumpur)"
+          placeholder="Search a country or city (e.g. Japan, Kuala Lumpur, London)"
           aria-label="Country or city"
           autocomplete="off"
         />
         <button type="submit" id="destinationSearchBtn">Search</button>
       </form>
+
+      <!-- Quick destination suggestion chips -->
+      <div class="quick-destinations" aria-label="Suggested destinations">
+        <span class="quick-label">Trending:</span>
+        <button type="button" class="quick-chip" data-query="Tokyo">🇯🇵 Tokyo</button>
+        <button type="button" class="quick-chip" data-query="Kuala Lumpur">🇲🇾 Kuala Lumpur</button>
+        <button type="button" class="quick-chip" data-query="Paris">🇫🇷 Paris</button>
+        <button type="button" class="quick-chip" data-query="London">🇬🇧 London</button>
+        <button type="button" class="quick-chip" data-query="Seoul">🇰🇷 Seoul</button>
+      </div>
 
       <p id="destinationMessage" class="message" role="status"></p>
 
