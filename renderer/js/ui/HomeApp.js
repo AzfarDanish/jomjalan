@@ -2,9 +2,10 @@
 // category. Places are only requested after the user picks a destination.
 const PlaceCategoryCatalog = require('../logics/PlaceCategoryCatalog');
 const { ActivityRecommender } = require('../logics/ActivityRecommender');
+const Trip = require('../models/Trip');
 
 class HomeApp {
-  constructor(geoapifyService, countryService, weatherService, currencyService) {
+  constructor(geoapifyService, countryService, weatherService, currencyService, tripRepository) {
     if (!geoapifyService || !countryService || !weatherService) {
       throw new Error(
         'HomeApp needs a Geoapify service, a country service and a weather service.'
@@ -15,10 +16,19 @@ class HomeApp {
     this.countryService = countryService;
     this.weatherService = weatherService;
     this.currencyService = currencyService;
+    this.tripRepository = tripRepository;
     this.categoryCatalog = new PlaceCategoryCatalog();
     this.activityRecommender = new ActivityRecommender();
     this.pageSize = geoapifyService.getPageSize();
 
+    // App Navigation & Toasts
+    this.navDiscoverBtn = document.getElementById('navDiscoverBtn');
+    this.navTripsBtn = document.getElementById('navTripsBtn');
+    this.tripsBadge = document.getElementById('tripsBadge');
+    this.appToast = document.getElementById('appToast');
+    this.toastTimeout = null;
+
+    // Discover & Destination Views
     this.destinationForm = document.getElementById('destinationForm');
     this.destinationInput = document.getElementById('destinationInput');
     this.destinationSearchButton = document.getElementById('destinationSearchBtn');
@@ -31,6 +41,7 @@ class HomeApp {
     this.destinationType = document.getElementById('destinationType');
     this.destinationTitle = document.getElementById('destinationTitle');
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
+    this.saveTripBtn = document.getElementById('saveTripBtn');
     this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
     this.recommendationsInfo = document.getElementById('recommendationsInfo');
@@ -47,11 +58,45 @@ class HomeApp {
     this.poiResults = document.getElementById('poiResults');
     this.loadMoreButton = document.getElementById('loadMoreBtn');
 
+    // My Trips View Elements
+    this.tripsView = document.getElementById('tripsView');
+    this.tripsMessage = document.getElementById('tripsMessage');
+    this.tripsEmptyState = document.getElementById('tripsEmptyState');
+    this.emptyStateDiscoverBtn = document.getElementById('emptyStateDiscoverBtn');
+    this.tripsGrid = document.getElementById('tripsGrid');
+
+    // Trip Modal Elements
+    this.tripModal = document.getElementById('tripModal');
+    this.modalTitle = document.getElementById('modalTitle');
+    this.modalCloseBtn = document.getElementById('modalCloseBtn');
+    this.modalCancelBtn = document.getElementById('modalCancelBtn');
+    this.tripForm = document.getElementById('tripForm');
+    this.tripIdInput = document.getElementById('tripId');
+    this.formDestinationName = document.getElementById('formDestinationName');
+    this.formCountry = document.getElementById('formCountry');
+    this.formTravelDate = document.getElementById('formTravelDate');
+    this.formDuration = document.getElementById('formDuration');
+    this.formTravelers = document.getElementById('formTravelers');
+    this.formBudget = document.getElementById('formBudget');
+    this.formNotes = document.getElementById('formNotes');
+    this.formRecommendationsGroup = document.getElementById('formRecommendationsGroup');
+    this.formRecommendationsPreview = document.getElementById('formRecommendationsPreview');
+    this.formErrorMessage = document.getElementById('formErrorMessage');
+
+    // Delete Confirmation Modal Elements
+    this.deleteModal = document.getElementById('deleteModal');
+    this.deleteModalCloseBtn = document.getElementById('deleteModalCloseBtn');
+    this.deleteCancelBtn = document.getElementById('deleteCancelBtn');
+    this.deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    this.deleteTripDestination = document.getElementById('deleteTripDestination');
+    this.pendingDeleteTripId = null;
+
     this.isSearching = false;
     this.isLoadingPois = false;
     this.destination = null;
     this.currentCountry = null;
     this.currentWeather = null;
+    this.currentRecommendations = [];
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds = new Set();
@@ -63,6 +108,71 @@ class HomeApp {
   }
 
   start() {
+    // Navigation listeners
+    if (this.navDiscoverBtn) {
+      this.navDiscoverBtn.addEventListener('click', () => {
+        this.showDiscoverView();
+      });
+    }
+
+    if (this.navTripsBtn) {
+      this.navTripsBtn.addEventListener('click', () => {
+        this.showTripsView();
+      });
+    }
+
+    if (this.emptyStateDiscoverBtn) {
+      this.emptyStateDiscoverBtn.addEventListener('click', () => {
+        this.showDiscoverView();
+      });
+    }
+
+    // Save as Trip Plan button on Destination page
+    if (this.saveTripBtn) {
+      this.saveTripBtn.addEventListener('click', () => {
+        this.openCreateTripModalFromDestination();
+      });
+    }
+
+    // Trip Modal events
+    if (this.modalCloseBtn) {
+      this.modalCloseBtn.addEventListener('click', () => {
+        this.closeTripModal();
+      });
+    }
+
+    if (this.modalCancelBtn) {
+      this.modalCancelBtn.addEventListener('click', () => {
+        this.closeTripModal();
+      });
+    }
+
+    if (this.tripForm) {
+      this.tripForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        this.handleTripFormSubmit();
+      });
+    }
+
+    // Delete Modal events
+    if (this.deleteModalCloseBtn) {
+      this.deleteModalCloseBtn.addEventListener('click', () => {
+        this.closeDeleteModal();
+      });
+    }
+
+    if (this.deleteCancelBtn) {
+      this.deleteCancelBtn.addEventListener('click', () => {
+        this.closeDeleteModal();
+      });
+    }
+
+    if (this.deleteConfirmBtn) {
+      this.deleteConfirmBtn.addEventListener('click', () => {
+        this.handleConfirmDelete();
+      });
+    }
+
     this.destinationForm.addEventListener('submit', (event) => {
       event.preventDefault();
       this.searchDestinations();
@@ -109,6 +219,9 @@ class HomeApp {
       this.destinationInput.disabled = true;
       this.destinationSearchButton.disabled = true;
     }
+
+    // Initialize badge count
+    this.updateTripsBadge();
   }
 
   async searchDestinations() {
@@ -651,6 +764,7 @@ class HomeApp {
       return;
     }
 
+    this.currentRecommendations = result.suggestions || [];
     this.recommendationsInfo.textContent = '';
 
     const heading = document.createElement('h2');
@@ -872,6 +986,7 @@ class HomeApp {
     this.destination = null;
     this.currentCountry = null;
     this.currentWeather = null;
+    this.currentRecommendations = [];
     this.selectedCategory = null;
     this.offset = 0;
     this.seenPoiIds.clear();
@@ -882,8 +997,374 @@ class HomeApp {
     this.poiMessage.textContent = '';
     this.loadMoreButton.hidden = true;
     this.destinationView.hidden = true;
+    if (this.tripsView) {
+      this.tripsView.hidden = true;
+    }
     this.discoverView.hidden = false;
+
+    // Update active nav button
+    if (this.navDiscoverBtn) this.navDiscoverBtn.classList.add('active');
+    if (this.navTripsBtn) this.navTripsBtn.classList.remove('active');
+
     window.scrollTo(0, 0);
+  }
+
+  showTripsView() {
+    this.discoverView.hidden = true;
+    this.destinationView.hidden = true;
+    if (this.tripsView) {
+      this.tripsView.hidden = false;
+    }
+
+    if (this.navDiscoverBtn) this.navDiscoverBtn.classList.remove('active');
+    if (this.navTripsBtn) this.navTripsBtn.classList.add('active');
+
+    this.renderTripsList();
+    window.scrollTo(0, 0);
+  }
+
+  // Toast feedback helper
+  showToast(message, type = 'success') {
+    if (!this.appToast) return;
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+
+    this.appToast.textContent = message;
+    this.appToast.className = `app-toast toast-${type}`;
+    this.appToast.hidden = false;
+
+    this.toastTimeout = setTimeout(() => {
+      this.appToast.hidden = true;
+    }, 4000);
+  }
+
+  // Update trips badge on navbar
+  updateTripsBadge() {
+    if (!this.tripsBadge || !this.tripRepository) return;
+    const trips = this.tripRepository.getAll();
+    const count = trips.length;
+    this.tripsBadge.textContent = String(count);
+    this.tripsBadge.hidden = count === 0;
+  }
+
+  // Render all saved trips in the tripsView
+  renderTripsList() {
+    if (!this.tripsGrid || !this.tripRepository) return;
+    this.tripsGrid.textContent = '';
+
+    const trips = this.tripRepository.getAll();
+    this.updateTripsBadge();
+
+    if (trips.length === 0) {
+      if (this.tripsEmptyState) this.tripsEmptyState.hidden = false;
+      this.tripsGrid.hidden = true;
+      return;
+    }
+
+    if (this.tripsEmptyState) this.tripsEmptyState.hidden = true;
+    this.tripsGrid.hidden = false;
+
+    for (const trip of trips) {
+      this.tripsGrid.appendChild(this.createTripCard(trip));
+    }
+  }
+
+  createTripCard(trip) {
+    const card = document.createElement('article');
+    card.className = 'trip-card';
+    card.dataset.tripId = trip.id;
+
+    // Header with destination name and country
+    const header = document.createElement('div');
+    header.className = 'trip-card-header';
+
+    const titleWrap = document.createElement('div');
+    const typeLabel = document.createElement('span');
+    typeLabel.className = 'trip-card-type';
+    typeLabel.textContent = trip.destinationType || 'Trip Itinerary';
+
+    const destTitle = document.createElement('h3');
+    destTitle.className = 'trip-card-title';
+    destTitle.textContent = trip.destinationName;
+
+    titleWrap.append(typeLabel, destTitle);
+
+    const countryTag = document.createElement('span');
+    countryTag.className = 'trip-country-tag';
+    countryTag.textContent = trip.country ? `${trip.country}` : (trip.countryCode || '');
+
+    header.append(titleWrap, countryTag);
+
+    // Meta details (Date, Duration, Travelers, Budget)
+    const metaGrid = document.createElement('div');
+    metaGrid.className = 'trip-meta-grid';
+
+    const metaDate = document.createElement('div');
+    metaDate.className = 'trip-meta-item';
+    metaDate.innerHTML = `<span class="meta-label">📅 Date</span><span class="meta-val">${trip.getFormattedDate()}</span>`;
+
+    const metaDuration = document.createElement('div');
+    metaDuration.className = 'trip-meta-item';
+    metaDuration.innerHTML = `<span class="meta-label">⏱️ Duration</span><span class="meta-val">${trip.durationDays} ${trip.durationDays === 1 ? 'day' : 'days'}</span>`;
+
+    const metaTravelers = document.createElement('div');
+    metaTravelers.className = 'trip-meta-item';
+    metaTravelers.innerHTML = `<span class="meta-label">👥 Travelers</span><span class="meta-val">${trip.travelers} ${trip.travelers === 1 ? 'person' : 'people'}</span>`;
+
+    const metaBudget = document.createElement('div');
+    metaBudget.className = 'trip-meta-item';
+    metaBudget.innerHTML = `<span class="meta-label">💰 Budget</span><span class="meta-val highlight-val">${trip.getFormattedBudget()}</span>`;
+
+    metaGrid.append(metaDate, metaDuration, metaTravelers, metaBudget);
+
+    // Daily budget calculation label
+    const dailyBudget = document.createElement('p');
+    dailyBudget.className = 'trip-daily-budget';
+    dailyBudget.textContent = `Estimated daily budget: ${trip.getFormattedDailyBudget()} / day`;
+
+    // Notes if present
+    let notesElem = null;
+    if (trip.notes) {
+      notesElem = document.createElement('div');
+      notesElem.className = 'trip-notes';
+      const notesTitle = document.createElement('strong');
+      notesTitle.textContent = 'Notes: ';
+      const notesContent = document.createElement('span');
+      notesContent.textContent = trip.notes;
+      notesElem.append(notesTitle, notesContent);
+    }
+
+    // Recommendations preview if attached
+    let recsElem = null;
+    if (trip.recommendations && trip.recommendations.length > 0) {
+      recsElem = document.createElement('div');
+      recsElem.className = 'trip-recs-section';
+      const recsHeading = document.createElement('h4');
+      recsHeading.textContent = `Attached Activity Suggestions (${trip.recommendations.length}):`;
+      const recsList = document.createElement('ul');
+      recsList.className = 'trip-recs-list';
+
+      for (const rec of trip.recommendations) {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${rec.title || 'Activity'}</strong> — <span>${rec.description || ''}</span>`;
+        recsList.appendChild(li);
+      }
+      recsElem.append(recsHeading, recsList);
+    }
+
+    // Actions row: Edit and Delete buttons
+    const actions = document.createElement('div');
+    actions.className = 'trip-card-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'button-edit';
+    editBtn.textContent = '✏️ Edit Trip';
+    editBtn.addEventListener('click', () => {
+      this.openEditTripModal(trip.id);
+    });
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'button-delete';
+    deleteBtn.textContent = '🗑️ Delete';
+    deleteBtn.addEventListener('click', () => {
+      this.openDeleteModal(trip.id, trip.destinationName);
+    });
+
+    actions.append(editBtn, deleteBtn);
+
+    card.append(header, metaGrid, dailyBudget);
+    if (notesElem) card.appendChild(notesElem);
+    if (recsElem) card.appendChild(recsElem);
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  // Open modal in Create mode from currently viewed destination
+  openCreateTripModalFromDestination() {
+    if (!this.destination) return;
+
+    this.resetTripForm();
+    if (this.modalTitle) this.modalTitle.textContent = 'Save as Trip Plan';
+    this.tripIdInput.value = '';
+
+    this.formDestinationName.value = this.destination.getDisplayName();
+    this.formCountry.value = this.currentCountry ? (this.currentCountry.name || '') : '';
+    this.currentCountryCode = this.currentCountry
+      ? (this.currentCountry.alpha2Code || this.destination.countryCode || '')
+      : (this.destination.countryCode || '');
+
+    // Default travel date: tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    this.formTravelDate.value = tomorrow.toISOString().slice(0, 10);
+    this.formDuration.value = 5;
+    this.formTravelers.value = 1;
+    this.formBudget.value = 2000;
+    this.currentTripCurrency = 'RM';
+
+    // Attach active recommendations
+    this.attachedRecommendations = [...this.currentRecommendations];
+    this.renderFormRecommendationsPreview(this.attachedRecommendations);
+
+    this.tripModal.hidden = false;
+  }
+
+  // Open modal in Edit mode
+  openEditTripModal(tripId) {
+    if (!this.tripRepository) return;
+    const trip = this.tripRepository.getById(tripId);
+    if (!trip) {
+      this.showToast('Trip not found.', 'error');
+      return;
+    }
+
+    this.resetTripForm();
+    if (this.modalTitle) this.modalTitle.textContent = 'Edit Trip Plan';
+    this.tripIdInput.value = trip.id;
+    this.formDestinationName.value = trip.destinationName;
+    this.formCountry.value = trip.country || '';
+    this.currentCountryCode = trip.countryCode || '';
+    this.formTravelDate.value = trip.travelDate;
+    this.formDuration.value = trip.durationDays;
+    this.formTravelers.value = trip.travelers;
+    this.formBudget.value = trip.budget;
+    this.currentTripCurrency = trip.currency || 'RM';
+    this.formNotes.value = trip.notes || '';
+
+    this.attachedRecommendations = trip.recommendations ? [...trip.recommendations] : [];
+    this.renderFormRecommendationsPreview(this.attachedRecommendations);
+
+    this.tripModal.hidden = false;
+  }
+
+  renderFormRecommendationsPreview(recs) {
+    if (!this.formRecommendationsPreview) return;
+    this.formRecommendationsPreview.textContent = '';
+
+    if (!recs || recs.length === 0) {
+      const empty = document.createElement('span');
+      empty.className = 'text-muted';
+      empty.textContent = 'No recommendations attached to this trip.';
+      this.formRecommendationsPreview.appendChild(empty);
+      return;
+    }
+
+    const badgeList = document.createElement('div');
+    badgeList.className = 'form-recs-badges';
+
+    for (const rec of recs) {
+      const badge = document.createElement('span');
+      badge.className = 'form-rec-chip';
+      badge.textContent = `💡 ${rec.title}`;
+      badgeList.appendChild(badge);
+    }
+
+    this.formRecommendationsPreview.appendChild(badgeList);
+  }
+
+  resetTripForm() {
+    if (this.tripForm) this.tripForm.reset();
+    if (this.formErrorMessage) {
+      this.formErrorMessage.textContent = '';
+      this.formErrorMessage.hidden = true;
+    }
+    this.attachedRecommendations = [];
+    this.currentCountryCode = '';
+    this.currentTripCurrency = 'RM';
+  }
+
+  closeTripModal() {
+    if (this.tripModal) this.tripModal.hidden = true;
+    this.resetTripForm();
+  }
+
+  // Handle Create or Update form submission
+  handleTripFormSubmit() {
+    const tripId = this.tripIdInput.value;
+    const isEdit = Boolean(tripId);
+
+    const tripData = {
+      destinationName: this.formDestinationName.value.trim(),
+      destinationType: this.destination ? this.destination.getTypeLabel() : 'Destination',
+      country: this.formCountry.value.trim(),
+      countryCode: (this.currentCountryCode || '').trim().toUpperCase(),
+      travelDate: this.formTravelDate.value,
+      durationDays: Number(this.formDuration.value),
+      travelers: Number(this.formTravelers.value),
+      budget: Number(this.formBudget.value),
+      currency: this.currentTripCurrency || 'RM',
+      notes: this.formNotes.value.trim(),
+      recommendations: this.attachedRecommendations || [],
+    };
+
+    // Model validation
+    const validation = Trip.validate(tripData);
+    if (!validation.isValid) {
+      this.showFormError(validation.errors.join('<br>'));
+      return;
+    }
+
+    try {
+      if (isEdit) {
+        this.tripRepository.update(tripId, tripData);
+        this.showToast(`Trip to "${tripData.destinationName}" successfully updated!`, 'success');
+      } else {
+        this.tripRepository.create(tripData);
+        this.showToast(`Trip to "${tripData.destinationName}" saved to My Trips!`, 'success');
+      }
+
+      this.closeTripModal();
+      this.updateTripsBadge();
+
+      // If user was viewing trips list, refresh the view
+      if (!this.tripsView.hidden) {
+        this.renderTripsList();
+      }
+    } catch (error) {
+      this.showFormError(error.message);
+    }
+  }
+
+  showFormError(html) {
+    if (!this.formErrorMessage) return;
+    this.formErrorMessage.innerHTML = html;
+    this.formErrorMessage.hidden = false;
+  }
+
+  // Delete modal confirmation
+  openDeleteModal(tripId, destinationName) {
+    this.pendingDeleteTripId = tripId;
+    if (this.deleteTripDestination) {
+      this.deleteTripDestination.textContent = destinationName || 'this trip';
+    }
+    if (this.deleteModal) {
+      this.deleteModal.hidden = false;
+    }
+  }
+
+  closeDeleteModal() {
+    this.pendingDeleteTripId = null;
+    if (this.deleteModal) {
+      this.deleteModal.hidden = true;
+    }
+  }
+
+  handleConfirmDelete() {
+    if (!this.pendingDeleteTripId || !this.tripRepository) return;
+
+    try {
+      this.tripRepository.delete(this.pendingDeleteTripId);
+      this.showToast('Trip deleted successfully.', 'success');
+      this.closeDeleteModal();
+      this.renderTripsList();
+    } catch (error) {
+      this.showToast(`Failed to delete trip: ${error.message}`, 'error');
+      this.closeDeleteModal();
+    }
   }
 
   showDestinationMessage(text, isError) {

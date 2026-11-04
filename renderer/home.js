@@ -3,6 +3,7 @@ const GeoapifyService = require('./js/services/GeoapifyService');
 const CountryService = require('./js/services/CountryService');
 const OpenMeteoService = require('./js/services/OpenMeteoService');
 const CurrencyService = require('./js/services/CurrencyService');
+const TripRepository = require('./js/data/TripRepository');
 const HomeApp = require('./js/ui/HomeApp');
 
 async function start() {
@@ -18,11 +19,13 @@ async function start() {
   const countryService = new CountryService();
   const weatherService = new OpenMeteoService();
   const currencyService = new CurrencyService();
+  const tripRepository = new TripRepository();
   const homeApp = new HomeApp(
     geoapifyService,
     countryService,
     weatherService,
-    currencyService
+    currencyService,
+    tripRepository
   );
 
   homeApp.start();

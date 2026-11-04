@@ -7,7 +7,21 @@
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png" />
 </head>
 <body>
+  <nav class="app-navbar">
+    <div class="nav-brand">
+      <span class="nav-logo">✈️</span>
+      <span class="nav-title">JomJalan</span>
+    </div>
+    <div class="nav-links">
+      <button type="button" id="navDiscoverBtn" class="nav-link active">🔍 Discover</button>
+      <button type="button" id="navTripsBtn" class="nav-link">🎒 My Trips <span id="tripsBadge" class="nav-badge" hidden>0</span></button>
+    </div>
+  </nav>
+
   <main class="app home-app">
+    <!-- Notification banner for CRUD feedback -->
+    <div id="appToast" class="app-toast" hidden role="alert" aria-live="polite"></div>
+
     <section id="discoverView" class="view">
       <header class="home-header">
         <p class="eyebrow">Explore the world</p>
@@ -42,11 +56,16 @@
     <section id="destinationView" class="view" hidden>
       <button type="button" id="backBtn" class="back-button">← Back to search</button>
 
-      <header class="destination-header">
-        <p id="destinationType" class="eyebrow"></p>
-        <h1 id="destinationTitle"></h1>
-        <p id="destinationSubtitle" class="tagline"></p>
-      </header>
+      <div class="destination-header-row">
+        <header class="destination-header">
+          <p id="destinationType" class="eyebrow"></p>
+          <h1 id="destinationTitle"></h1>
+          <p id="destinationSubtitle" class="tagline"></p>
+        </header>
+        <div class="destination-actions">
+          <button type="button" id="saveTripBtn" class="primary-btn save-trip-btn">➕ Save as Trip Plan</button>
+        </div>
+      </div>
 
       <!-- Current weather for the selected country or city. -->
       <section
@@ -126,6 +145,116 @@
         <button type="button" id="loadMoreBtn" hidden>Load more places</button>
       </div>
     </section>
+
+    <!-- Dedicated "My Trips" View -->
+    <section id="tripsView" class="view" hidden>
+      <header class="trips-header">
+        <div class="trips-header-text">
+          <p class="eyebrow">Personal Itinerary</p>
+          <h1>My Saved Trips</h1>
+          <p class="tagline">View, plan, edit, and manage your saved travel itineraries.</p>
+        </div>
+      </header>
+
+      <p id="tripsMessage" class="message" role="status"></p>
+
+      <!-- Empty State -->
+      <div id="tripsEmptyState" class="empty-state" hidden>
+        <span class="empty-icon">🗺️</span>
+        <h2>No travel plans yet</h2>
+        <p>You haven't saved any trips yet. Discover destinations and click "Save as Trip Plan" to start planning!</p>
+        <button type="button" id="emptyStateDiscoverBtn" class="primary-btn">Explore Destinations</button>
+      </div>
+
+      <!-- Trips List Grid -->
+      <section id="tripsGrid" class="trips-grid" aria-live="polite"></section>
+    </section>
+
+    <!-- Trip Modal (Used for Create & Edit) -->
+    <div id="tripModal" class="modal-backdrop" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header">
+          <h2 id="modalTitle">Plan Your Trip</h2>
+          <button type="button" id="modalCloseBtn" class="modal-close" aria-label="Close dialog">✕</button>
+        </div>
+        <form id="tripForm" class="trip-form">
+          <input type="hidden" id="tripId" />
+
+          <div class="form-group">
+            <label for="formDestinationName">Destination <span class="required">*</span></label>
+            <input type="text" id="formDestinationName" required placeholder="e.g. Kyoto, Japan" />
+          </div>
+
+          <div class="form-group">
+            <label for="formCountry">Country</label>
+            <input type="text" id="formCountry" placeholder="e.g. Japan" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="formTravelDate">Travel Date <span class="required">*</span></label>
+              <input type="date" id="formTravelDate" required />
+            </div>
+            <div class="form-group">
+              <label for="formDuration">Duration (days) <span class="required">*</span></label>
+              <input type="number" id="formDuration" min="1" step="1" value="5" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="formTravelers">Travelers <span class="required">*</span></label>
+              <input type="number" id="formTravelers" min="1" step="1" value="1" required />
+            </div>
+            <div class="form-group">
+              <label for="formBudget">Total Budget (RM) <span class="required">*</span></label>
+              <div class="input-with-currency-prefix">
+                <span class="currency-prefix">RM</span>
+                <input type="number" id="formBudget" min="0" step="any" value="2000" required placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="formNotes">Notes & Itinerary Details</label>
+            <textarea id="formNotes" rows="3" placeholder="Add packing list, flight info, or personal itinerary notes..."></textarea>
+          </div>
+
+          <!-- Associated Recommendations Section -->
+          <div id="formRecommendationsGroup" class="form-group">
+            <label>Saved Recommendations</label>
+            <div id="formRecommendationsPreview" class="form-recs-preview">
+              <span class="text-muted">No recommendations attached.</span>
+            </div>
+          </div>
+
+          <p id="formErrorMessage" class="form-error-message" role="alert" hidden></p>
+
+          <div class="modal-footer">
+            <button type="button" id="modalCancelBtn" class="button-secondary">Cancel</button>
+            <button type="submit" id="modalSaveBtn" class="primary-btn">Save Trip</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-backdrop" hidden>
+      <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-header">
+          <h2 id="deleteModalTitle">Delete Trip</h2>
+          <button type="button" id="deleteModalCloseBtn" class="modal-close" aria-label="Close dialog">✕</button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete your trip to <strong id="deleteTripDestination"></strong>?</p>
+          <p class="text-muted">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="deleteCancelBtn" class="button-secondary">Cancel</button>
+          <button type="button" id="deleteConfirmBtn" class="button-danger">Delete</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="home.js"></script>
