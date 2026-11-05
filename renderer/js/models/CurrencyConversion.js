@@ -20,18 +20,13 @@ class CurrencyConversion {
     this.targetCurrency = targetCurrency.toUpperCase();
     this.amount = amount;
     this.rate = rate;
+    this.convertedAmount = amount * rate;
     this.date = date || new Date().toISOString().slice(0, 10);
-  }
-
-  // Calculate the converted amount: amount * exchange rate.
-  calculateConvertedAmount() {
-    return this.amount * this.rate;
   }
 
   // Format the converted result with clear currency code and appropriate decimals.
   getFormattedConvertedAmount() {
-    const converted = this.calculateConvertedAmount();
-    return `${converted.toLocaleString('en-US', {
+    return `${this.convertedAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })} ${this.targetCurrency}`;

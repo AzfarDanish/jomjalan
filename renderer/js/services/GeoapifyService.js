@@ -15,10 +15,6 @@ class GeoapifyService {
     return this.apiKey.length > 0;
   }
 
-  getPageSize() {
-    return this.defaultPageSize;
-  }
-
   // Search for matching countries and cities at the same time.
   // Geoapify does not accept "type=city,country" in one request, so two
   // requests are sent and the results are merged.

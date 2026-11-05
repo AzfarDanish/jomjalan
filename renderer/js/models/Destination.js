@@ -8,10 +8,6 @@ class Location {
     this.latitude = latitude;
     this.longitude = longitude;
   }
-
-  getCoordinatesLabel() {
-    return `${this.latitude.toFixed(4)}, ${this.longitude.toFixed(4)}`;
-  }
 }
 
 // A Destination is one country or city result from the Geoapify geocoding API.

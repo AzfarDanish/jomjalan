@@ -9,28 +9,10 @@ class TripRepository {
     this.storageKey = storageKey;
   }
 
-  // Helper to safely access localStorage (works in browser and Electron renderer)
-  _getStorage() {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage;
-    }
-    // Fallback in-memory storage for non-DOM test environments
-    if (!this._memoryStorage) {
-      this._memoryStorage = {};
-    }
-    return {
-      getItem: (key) => this._memoryStorage[key] || null,
-      setItem: (key, val) => { this._memoryStorage[key] = String(val); },
-      removeItem: (key) => { delete this._memoryStorage[key]; },
-      clear: () => { this._memoryStorage = {}; },
-    };
-  }
-
   // Get all trips as Trip model instances
   getAll() {
     try {
-      const storage = this._getStorage();
-      const raw = storage.getItem(this.storageKey);
+      const raw = localStorage.getItem(this.storageKey);
       if (!raw) {
         return [];
       }
@@ -66,9 +48,8 @@ class TripRepository {
 
   // Save all trips to storage
   _saveAll(trips) {
-    const storage = this._getStorage();
     const serialized = JSON.stringify(trips.map((t) => (t instanceof Trip ? t.toJSON() : t)));
-    storage.setItem(this.storageKey, serialized);
+    localStorage.setItem(this.storageKey, serialized);
   }
 
   // Create and persist a new trip

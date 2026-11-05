@@ -1579,3 +1579,10 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Pressed state for clickable controls */
+button:active:not(:disabled),
+.destination-card:active,
+.nav-link:active {
+  transform: scale(0.97);
+}
