@@ -156,6 +156,14 @@ function start() {
   setupClearButton();
   setupQuickChips();
   updateTripsBadge();
+
+  // Keep badge synchronized with localStorage across windows and app events
+  window.addEventListener('storage', (e) => {
+    if (!e.key || e.key === tripRepository.storageKey) {
+      updateTripsBadge();
+    }
+  });
+  window.addEventListener('jomjalan:trips-changed', updateTripsBadge);
 }
 
 try {

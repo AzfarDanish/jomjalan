@@ -7,6 +7,42 @@ const Trip = require('../models/Trip');
 class TripRepository {
   constructor(storageKey = 'jomjalan_trips_v1') {
     this.storageKey = storageKey;
+    this.subscribers = new Set();
+  }
+
+  // Subscribe to changes in the repository (Observer pattern)
+  subscribe(callback) {
+    if (typeof callback === 'function') {
+      this.subscribers.add(callback);
+    }
+    return () => this.unsubscribe(callback);
+  }
+
+  unsubscribe(callback) {
+    this.subscribers.delete(callback);
+  }
+
+  // Notify local subscribers and dispatch window event for frontend synchronization
+  _notify(action, trip) {
+    for (const callback of this.subscribers) {
+      try {
+        callback({ action, trip, trips: this.getAll() });
+      } catch (err) {
+        console.error('Error in TripRepository subscriber callback:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('jomjalan:trips-changed', {
+            detail: { action, trip, storageKey: this.storageKey },
+          })
+        );
+      } catch (err) {
+        console.error('Error dispatching jomjalan:trips-changed event:', err);
+      }
+    }
   }
 
   // Get all trips as Trip model instances
@@ -62,6 +98,7 @@ class TripRepository {
     const trips = this.getAll();
     trips.unshift(trip);
     this._saveAll(trips);
+    this._notify('create', trip);
     return trip;
   }
 
@@ -94,6 +131,7 @@ class TripRepository {
 
     trips[index] = updated;
     this._saveAll(trips);
+    this._notify('update', updated);
     return updated;
   }
 
@@ -110,7 +148,9 @@ class TripRepository {
       throw new Error(`Trip with ID "${id}" was not found.`);
     }
 
+    const deletedTrip = trips.find((t) => t.id === id);
     this._saveAll(filtered);
+    this._notify('delete', deletedTrip || { id });
     return true;
   }
 }

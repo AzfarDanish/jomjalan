@@ -313,6 +313,16 @@ function start() {
     if (e.target === deleteModal) closeDeleteModal();
   });
 
+  // Keep trips list and badge in sync with localStorage across windows/tabs and app events
+  window.addEventListener('storage', (e) => {
+    if (!e.key || e.key === tripRepository.storageKey) {
+      renderTripsList();
+    }
+  });
+  window.addEventListener('jomjalan:trips-changed', () => {
+    renderTripsList();
+  });
+
   renderTripsList();
 }
 

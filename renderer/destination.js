@@ -22,6 +22,7 @@ let currenciesLoaded = false;
 let toastTimeout = null;
 
 // DOM Elements
+const tripsBadge = document.getElementById('tripsBadge');
 const destinationType = document.getElementById('destinationType');
 const destinationTitle = document.getElementById('destinationTitle');
 const destinationSubtitle = document.getElementById('destinationSubtitle');
@@ -68,6 +69,13 @@ function showToast(message, type = 'success') {
   appToast.className = `app-toast toast-${type}`;
   appToast.hidden = false;
   toastTimeout = setTimeout(() => { appToast.hidden = true; }, 4000);
+}
+
+function updateTripsBadge() {
+  if (!tripsBadge) return;
+  const count = tripRepository.getAll().length;
+  tripsBadge.textContent = String(count);
+  tripsBadge.hidden = count === 0;
 }
 
 // Weather & Country
@@ -273,6 +281,7 @@ function handleTripFormSubmit(e) {
 
   try {
     tripRepository.create(tripData);
+    updateTripsBadge();
     showToast(`Trip to "${tripData.destinationName}" saved to My Trips!`);
     closeTripModal();
   } catch (error) {
@@ -313,6 +322,14 @@ async function start() {
   modalCancelBtn.addEventListener('click', closeTripModal);
   tripModal.addEventListener('click', (e) => { if (e.target === tripModal) closeTripModal(); });
   tripForm.addEventListener('submit', handleTripFormSubmit);
+
+  updateTripsBadge();
+  window.addEventListener('storage', (e) => {
+    if (!e.key || e.key === tripRepository.storageKey) {
+      updateTripsBadge();
+    }
+  });
+  window.addEventListener('jomjalan:trips-changed', updateTripsBadge);
 
   loadWeather(currentDestination);
   loadCountry(currentDestination);
