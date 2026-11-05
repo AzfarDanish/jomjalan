@@ -1,20 +1,15 @@
-const { ipcRenderer } = require('electron');
 const CountryService = require('./js/services/CountryService');
 const OpenMeteoService = require('./js/services/OpenMeteoService');
 const CurrencyService = require('./js/services/CurrencyService');
-const UnsplashService = require('./js/services/UnsplashService');
-const GeoapifyService = require('./js/services/GeoapifyService');
 const ActivityRecommender = require('./js/logics/ActivityRecommender');
 const TripRepository = require('./js/data/TripRepository');
 const Destination = require('./js/models/Destination');
 const Trip = require('./js/models/Trip');
 
 // Services
-let geoapifyService;
 let countryService;
 let weatherService;
 let currencyService;
-let unsplashService;
 let tripRepository;
 const activityRecommender = new ActivityRecommender();
 
@@ -35,24 +30,18 @@ let currentTripCurrency = 'RM';
 let countryRequestToken = 0;
 let weatherRequestToken = 0;
 let currencyRequestToken = 0;
-let photosRequestToken = 0;
-let poiRequestToken = 0;
 
 // DOM Elements
 const tripsBadge = document.getElementById('tripsBadge');
 const appToast = document.getElementById('appToast');
 
-const destinationCover = document.getElementById('destinationCover');
 const destinationType = document.getElementById('destinationType');
 const destinationTitle = document.getElementById('destinationTitle');
 const destinationSubtitle = document.getElementById('destinationSubtitle');
 const saveTripBtn = document.getElementById('saveTripBtn');
-const photosMessage = document.getElementById('photosMessage');
 const weatherInfo = document.getElementById('weatherInfo');
 const countryInfo = document.getElementById('countryInfo');
 const recommendationsInfo = document.getElementById('recommendationsInfo');
-const poiMessage = document.getElementById('poiMessage');
-const poiResults = document.getElementById('poiResults');
 
 const currencyConverter = document.getElementById('currencyConverter');
 const currencyForm = document.getElementById('currencyForm');
@@ -61,6 +50,8 @@ const currencyFrom = document.getElementById('currencyFrom');
 const currencyTo = document.getElementById('currencyTo');
 const currencyFromStatic = document.getElementById('currencyFromStatic');
 const currencyToStatic = document.getElementById('currencyToStatic');
+const currencyFromLabel = document.getElementById('currencyFromLabel');
+const currencyToLabel = document.getElementById('currencyToLabel');
 const currencySwapBtn = document.getElementById('currencySwapBtn');
 const currencyConvertBtn = document.getElementById('currencyConvertBtn');
 const currencyResult = document.getElementById('currencyResult');
@@ -123,7 +114,7 @@ function showPanelError(panel, title, errorText) {
 }
 
 // -------------------------------------------------------------
-// Weather, Country & Photo Display
+// Weather & Country Display
 // -------------------------------------------------------------
 
 async function loadWeather(destination) {
@@ -214,48 +205,6 @@ function renderCountry(country) {
   countryInfo.hidden = false;
 }
 
-async function loadPhotos(destination) {
-  const token = ++photosRequestToken;
-  clearPhotos();
-
-  try {
-    let photos = await unsplashService.searchPhotos(`${destination.name} landmark travel`, 3);
-
-    if (token !== photosRequestToken) return;
-
-    if ((!photos || photos.length === 0) && destination.country && destination.country !== destination.name) {
-      photos = await unsplashService.searchPhotos(`${destination.country} landmark`, 3);
-      if (token !== photosRequestToken) return;
-    }
-
-    if (photos && photos.length > 0) {
-      renderPhotos(photos);
-    } else {
-      destinationCover.hidden = true;
-      photosMessage.textContent = 'No photos found for this destination.';
-      photosMessage.hidden = false;
-    }
-  } catch (error) {
-    if (token !== photosRequestToken) return;
-    destinationCover.hidden = true;
-    photosMessage.textContent = `Unable to load photos: ${error.message}`;
-    photosMessage.hidden = false;
-  }
-}
-
-function clearPhotos() {
-  destinationCover.hidden = true;
-  destinationCover.style.backgroundImage = '';
-  photosMessage.hidden = true;
-  photosMessage.textContent = '';
-}
-
-function renderPhotos(photos) {
-  const heroPhoto = photos[0];
-  destinationCover.style.backgroundImage = `url("${heroPhoto.regularUrl}")`;
-  destinationCover.hidden = false;
-}
-
 // -------------------------------------------------------------
 // Currency Converter
 // -------------------------------------------------------------
@@ -270,14 +219,6 @@ function getPlaceCurrencyCode() {
     if (code) return code.toUpperCase();
   }
   return 'USD';
-}
-
-function clearCurrencyConverter() {
-  currencyConverter.hidden = true;
-  currencyResult.textContent = '';
-  currencyResult.hidden = true;
-  currencyMessage.textContent = '';
-  currencyMessage.hidden = true;
 }
 
 function updateCurrencyConverterUI() {
@@ -295,20 +236,24 @@ function updateCurrencyConverterUI() {
     // FROM: Select (editable, defaults to MYR)
     currencyFrom.hidden = false;
     currencyFromStatic.hidden = true;
+    if (currencyFromLabel) currencyFromLabel.hidden = false;
 
-    // TO: Static badge (place currency)
+    // TO: Static badge (place currency) - No label per requirements
     currencyTo.hidden = true;
     currencyToStatic.textContent = placeCurrency;
     currencyToStatic.hidden = false;
+    if (currencyToLabel) currencyToLabel.hidden = true;
   } else {
-    // FROM: Static badge (place currency)
+    // FROM: Static badge (place currency) - No label per requirements
     currencyFrom.hidden = true;
     currencyFromStatic.textContent = placeCurrency;
     currencyFromStatic.hidden = false;
+    if (currencyFromLabel) currencyFromLabel.hidden = true;
 
     // TO: Select (editable, defaults to MYR)
     currencyTo.hidden = false;
     currencyToStatic.hidden = true;
+    if (currencyToLabel) currencyToLabel.hidden = false;
   }
 }
 
@@ -410,7 +355,7 @@ async function handleCurrencySubmit(e) {
 }
 
 // -------------------------------------------------------------
-// Activity Recommendations & POI Places
+// Activity Recommendations
 // -------------------------------------------------------------
 
 function updateRecommendations() {
@@ -448,64 +393,6 @@ function renderRecommendations(suggestions) {
     <div class="activities-grid">${itemsHtml}</div>
   `;
   recommendationsInfo.hidden = false;
-}
-
-async function loadPois(destination) {
-  const token = ++poiRequestToken;
-  poiMessage.textContent = 'Loading top places to visit...';
-  poiMessage.className = 'message';
-  poiMessage.hidden = false;
-  poiResults.textContent = '';
-
-  const defaultCategories = [
-    'tourism.attraction',
-    'tourism.sights',
-    'entertainment.museum',
-    'heritage',
-  ];
-
-  try {
-    const pois = await geoapifyService.getPlaces(destination, defaultCategories, 8);
-
-    if (token !== poiRequestToken) return;
-
-    if (!pois || pois.length === 0) {
-      poiMessage.textContent = 'No points of interest found nearby.';
-      poiMessage.hidden = false;
-      return;
-    }
-
-    poiMessage.hidden = true;
-    renderPois(pois);
-  } catch (error) {
-    if (token !== poiRequestToken) return;
-    poiMessage.textContent = `Unable to load places: ${error.message}`;
-    poiMessage.className = 'message error-text';
-    poiMessage.hidden = false;
-  }
-}
-
-function renderPois(pois) {
-  poiResults.textContent = '';
-
-  for (const poi of pois) {
-    const card = document.createElement('article');
-    card.className = 'poi-card';
-
-    const addressHtml = poi.address
-      ? `<p class="poi-address">${poi.address}</p>`
-      : '';
-
-    card.innerHTML = `
-      <div class="poi-header">
-        <span class="poi-category-badge">${poi.categoryLabel}</span>
-      </div>
-      <h3 class="poi-name">${poi.name}</h3>
-      ${addressHtml}
-    `;
-
-    poiResults.appendChild(card);
-  }
 }
 
 // -------------------------------------------------------------
@@ -615,7 +502,7 @@ function handleTripFormSubmit(e) {
 // -------------------------------------------------------------
 
 async function start() {
-  const raw = sessionStorage.getItem('currentDestination');
+  const raw = sessionStorage.getItem('currentDestination') || localStorage.getItem('currentDestination');
   if (!raw) {
     window.location.href = 'discover.html';
     return;
@@ -628,20 +515,9 @@ async function start() {
     return;
   }
 
-  let geoapifyKey = '';
-  let unsplashKey = '';
-  try {
-    geoapifyKey = await ipcRenderer.invoke('get-geoapify-key');
-    unsplashKey = await ipcRenderer.invoke('get-unsplash-key');
-  } catch (e) {
-    // Fall back to empty
-  }
-
-  geoapifyService = new GeoapifyService(geoapifyKey);
   countryService = new CountryService();
   weatherService = new OpenMeteoService();
   currencyService = new CurrencyService();
-  unsplashService = new UnsplashService(unsplashKey);
   tripRepository = new TripRepository();
 
   destinationTitle.textContent = currentDestination.name;
@@ -671,14 +547,9 @@ async function start() {
 
   loadWeather(currentDestination);
   loadCountry(currentDestination);
-  loadPhotos(currentDestination);
-  loadPois(currentDestination);
   setupCurrencyConverter();
 }
 
 start().catch((error) => {
-  if (photosMessage) {
-    photosMessage.textContent = `Unable to load destination: ${error.message}`;
-    photosMessage.hidden = false;
-  }
+  console.error('Unable to load destination:', error);
 });

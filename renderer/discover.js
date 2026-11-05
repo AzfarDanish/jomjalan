@@ -1,9 +1,8 @@
-const { ipcRenderer } = require('electron');
-const GeoapifyService = require('./js/services/GeoapifyService');
+const OpenMeteoService = require('./js/services/OpenMeteoService');
 const TripRepository = require('./js/data/TripRepository');
 
 // State
-let geoapifyService;
+let openMeteoService;
 let tripRepository;
 let isSearching = false;
 let requestToken = 0;
@@ -53,7 +52,7 @@ async function searchDestinations() {
   destinationResults.textContent = '';
 
   try {
-    const destinations = await geoapifyService.autocompletePlaces(query);
+    const destinations = await openMeteoService.searchLocations(query);
 
     if (token !== requestToken) {
       return;
@@ -95,21 +94,19 @@ function renderDestinations(destinations) {
     `;
 
     card.addEventListener('click', () => {
-      sessionStorage.setItem(
-        'currentDestination',
-        JSON.stringify({
-          name: destination.name,
-          lat: destination.latitude,
-          lon: destination.longitude,
-          country: destination.country,
-          country_code: destination.countryCode,
-          state: destination.state,
-          result_type: destination.resultType,
-          formatted: destination.formatted,
-          place_id: destination.placeId,
-          bbox: destination.bbox,
-        })
-      );
+      const destinationPayload = JSON.stringify({
+        name: destination.name,
+        lat: destination.latitude,
+        lon: destination.longitude,
+        country: destination.country,
+        country_code: destination.countryCode,
+        state: destination.state,
+        result_type: destination.resultType,
+        formatted: destination.formatted,
+      });
+
+      sessionStorage.setItem('currentDestination', destinationPayload);
+      localStorage.setItem('currentDestination', destinationPayload);
       window.location.href = 'destination.html';
     });
 
@@ -147,15 +144,8 @@ function setupQuickChips() {
   });
 }
 
-async function start() {
-  let apiKey = '';
-  try {
-    apiKey = await ipcRenderer.invoke('get-geoapify-key');
-  } catch (error) {
-    apiKey = '';
-  }
-
-  geoapifyService = new GeoapifyService(apiKey);
+function start() {
+  openMeteoService = new OpenMeteoService();
   tripRepository = new TripRepository();
 
   destinationForm.addEventListener('submit', (e) => {
@@ -166,20 +156,13 @@ async function start() {
   setupClearButton();
   setupQuickChips();
   updateTripsBadge();
-
-  if (!geoapifyService.hasApiKey()) {
-    showDestinationMessage(
-      'Geoapify API key is missing. Add geoapifyKey to .env.local and restart the app.',
-      true
-    );
-    destinationInput.disabled = true;
-    destinationSearchBtn.disabled = true;
-  }
 }
 
-start().catch((error) => {
+try {
+  start();
+} catch (error) {
   if (destinationMessage) {
     destinationMessage.textContent = `Unable to start Discover: ${error.message}`;
     destinationMessage.className = 'message error-text';
   }
-});
+}

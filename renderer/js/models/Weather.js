@@ -40,10 +40,6 @@ class Weather {
     }
 
     this.temperature = current.temperature_2m;
-    this.apparentTemperature =
-      typeof current.apparent_temperature === 'number'
-        ? current.apparent_temperature
-        : null;
     this.humidity =
       typeof current.relative_humidity_2m === 'number'
         ? current.relative_humidity_2m
@@ -63,10 +59,6 @@ class Weather {
     return WEATHER_DESCRIPTIONS[this.weatherCode] || 'Unknown conditions';
   }
 
-  getWeatherDescription() {
-    return this.getDescription();
-  }
-
   getTemperatureLabel() {
     if (typeof this.temperature !== 'number') {
       return '';
@@ -74,19 +66,11 @@ class Weather {
     return `${Math.round(this.temperature)}°C`;
   }
 
-  getFormattedTemp() {
-    return this.getTemperatureLabel();
-  }
-
   getHumidityLabel() {
     if (typeof this.humidity !== 'number') {
       return '';
     }
     return `${Math.round(this.humidity)}%`;
-  }
-
-  getFormattedHumidity() {
-    return this.getHumidityLabel();
   }
 
   getWindLabel() {
@@ -98,10 +82,6 @@ class Weather {
     const direction = this.getWindDirectionLabel();
 
     return direction ? `${speed} from ${direction}` : speed;
-  }
-
-  getFormattedWind() {
-    return this.getWindLabel();
   }
 
   getWindDirectionLabel() {

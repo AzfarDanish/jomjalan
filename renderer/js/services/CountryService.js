@@ -33,10 +33,6 @@ class CountryService {
     return new Country(data);
   }
 
-  async getCountryByCode(countryCode) {
-    return this.getCountry(countryCode);
-  }
-
   async request(url) {
     let response;
 

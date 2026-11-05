@@ -21,18 +21,6 @@ class CurrencyConversion {
     this.date = date || new Date().toISOString().slice(0, 10);
   }
 
-  get from() {
-    return this.baseCurrency;
-  }
-
-  get to() {
-    return this.targetCurrency;
-  }
-
-  get result() {
-    return this.convertedAmount;
-  }
-
   // Format the converted result with currency code
   getFormattedConvertedAmount() {
     return `${this.convertedAmount.toLocaleString('en-US', {

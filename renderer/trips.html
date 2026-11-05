@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JomJalan — My Trips</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="style.css" />
@@ -14,11 +15,11 @@
       <span class="nav-title">JomJalan</span>
     </div>
     <div class="nav-links">
-      <a href="discover.html" id="navDiscoverBtn" class="nav-link">
+      <a href="discover.html" class="nav-link">
         <span class="material-symbols-sharp icon-sm">search</span>
         <span>Discover</span>
       </a>
-      <a href="trips.html" id="navTripsBtn" class="nav-link active">
+      <a href="trips.html" class="nav-link active">
         <span class="material-symbols-sharp icon-sm">luggage</span>
         <span>My Trips</span>
         <span id="tripsBadge" class="nav-badge" hidden></span>
@@ -46,7 +47,7 @@
         <span class="material-symbols-sharp empty-icon">map</span>
         <h2>No saved trips yet</h2>
         <p>Plan your adventures, track itinerary details, and manage your budget all in one place.</p>
-        <a href="discover.html" id="emptyStateDiscoverBtn" class="primary-btn" style="text-decoration:none;display:inline-block;">Explore Destinations</a>
+        <a href="discover.html" class="primary-btn" style="text-decoration:none;display:inline-block;">Explore Destinations</a>
       </div>
 
       <!-- Trips List Grid -->
@@ -106,7 +107,7 @@
           </div>
 
           <!-- Associated Recommendations Section -->
-          <div id="formRecommendationsGroup" class="form-group">
+          <div class="form-group">
             <label>Saved Recommendations</label>
             <div id="formRecommendationsPreview" class="form-recs-preview">
               <span class="text-muted">No recommendations attached.</span>
@@ -117,7 +118,7 @@
 
           <div class="modal-footer">
             <button type="button" id="modalCancelBtn" class="button-secondary">Cancel</button>
-            <button type="submit" id="modalSaveBtn" class="primary-btn">Save Trip</button>
+            <button type="submit" class="primary-btn">Save Trip</button>
           </div>
         </form>
       </div>

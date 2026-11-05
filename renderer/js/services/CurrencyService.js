@@ -18,23 +18,8 @@ class CurrencyService {
     return data;
   }
 
-  async getSupportedCurrencies() {
-    return this.getCurrencies();
-  }
-
   // Convert an amount between currencies
-  async convert(arg1, arg2, arg3) {
-    let from, to, amount;
-    if (typeof arg1 === 'number') {
-      amount = arg1;
-      from = arg2;
-      to = arg3;
-    } else {
-      from = arg1;
-      to = arg2;
-      amount = arg3;
-    }
-
+  async convert(from, to, amount) {
     const fromCode = typeof from === 'string' ? from.trim().toUpperCase() : '';
     const toCode = typeof to === 'string' ? to.trim().toUpperCase() : '';
 

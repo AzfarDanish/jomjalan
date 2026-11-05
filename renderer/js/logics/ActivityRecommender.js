@@ -9,31 +9,9 @@ class ActivityRecommender {
   }
 
   // Evaluates country and weather conditions
-  recommend(destination, arg2, arg3) {
-    if (!destination) {
-      return {
-        suggestions: [],
-        fallbackMessage: 'Select a destination to view tailored activity recommendations.'
-      };
-    }
-
-    // Support both (destination, country, weather) and (destination, weather, country)
-    let country = null;
-    let weather = null;
-
-    if (arg2 && typeof arg2.temperature === 'number') {
-      weather = arg2;
-      country = arg3;
-    } else {
-      country = arg2;
-      weather = arg3;
-    }
-
-    if (!weather) {
-      return {
-        suggestions: [],
-        fallbackMessage: 'Weather conditions are currently unavailable to generate personalized activity recommendations.'
-      };
+  recommend(destination, country, weather) {
+    if (!destination || !weather) {
+      return { suggestions: [] };
     }
 
     const weatherCategory = this.determineWeatherCategory(weather);
@@ -146,10 +124,7 @@ class ActivityRecommender {
       });
     }
 
-    return {
-      suggestions: suggestions.slice(0, 3),
-      fallbackMessage: ''
-    };
+    return { suggestions: suggestions.slice(0, 3) };
   }
 
   determineWeatherCategory(weather) {
