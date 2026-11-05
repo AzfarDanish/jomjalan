@@ -28,7 +28,7 @@ class OpenMeteoService {
       const parts = [item.name, item.admin1, item.country].filter(Boolean);
       const uniqueParts = parts.filter((part, idx) => parts.indexOf(part) === idx);
 
-      return new Destination({
+      return Destination.create({
         name: item.name,
         lat: item.latitude,
         lon: item.longitude,

@@ -14,21 +14,19 @@ class ActivityRecommender {
       return { suggestions: [] };
     }
 
-    const weatherCategory = this.determineWeatherCategory(weather);
+    const weatherCondition = this.determineWeatherCondition(weather);
     const suggestions = [];
 
-    switch (weatherCategory) {
+    switch (weatherCondition) {
       case 'rainy_or_stormy':
         suggestions.push(
           {
             title: 'Explore Local Museums & Art Galleries',
-            category: 'Indoor Culture',
             bestTime: 'Rainy days',
             description: 'Heavy rain detected. Staying indoors while discovering local history, art, and heritage is ideal today.'
           },
           {
             title: 'Indoor Shopping & Dining',
-            category: 'Indoor Dining',
             bestTime: 'Anytime',
             description: 'Visit indoor shopping centers and covered food markets to enjoy local specialties comfortably sheltered.'
           }
@@ -39,13 +37,11 @@ class ActivityRecommender {
         suggestions.push(
           {
             title: 'Winter Sightseeing & Snow Activities',
-            category: 'Winter Outdoor',
             bestTime: 'Daylight hours',
             description: 'Snow is falling! Great for scenic photography or visiting historic landmarks dressed in snow.'
           },
           {
             title: 'Warm Cozy Cafes & Hearty Cuisine',
-            category: 'Dining',
             bestTime: 'Afternoon',
             description: 'Warm up with hot beverages and traditional comfort foods at local cafes.'
           }
@@ -56,13 +52,11 @@ class ActivityRecommender {
         suggestions.push(
           {
             title: 'Early Morning Parks & Sights',
-            category: 'Outdoor Sightseeing',
             bestTime: 'Morning or Evening',
             description: 'High temperatures detected. Explore outdoor landmarks during cooler morning or late afternoon hours.'
           },
           {
             title: 'Air-Conditioned Attractions & Culinary Stops',
-            category: 'Indoor Culture',
             bestTime: 'Midday',
             description: 'Beat the midday heat by checking out indoor attractions, galleries, and refreshing cafe stops.'
           }
@@ -73,13 +67,11 @@ class ActivityRecommender {
         suggestions.push(
           {
             title: 'Outdoor Walking Tour & Scenic Landmarks',
-            category: 'Walking Tour',
             bestTime: 'Morning / Afternoon',
             description: 'Clear skies and comfortable temperatures create ideal conditions for walking tours and sights.'
           },
           {
             title: 'Parks, Nature Reserves & Waterfronts',
-            category: 'Nature & Parks',
             bestTime: 'All day',
             description: 'Take full advantage of the pleasant weather by visiting open-air nature parks and waterfront promenades.'
           }
@@ -90,7 +82,6 @@ class ActivityRecommender {
         suggestions.push(
           {
             title: 'Atmospheric Photography & Historic Quarter',
-            category: 'Photography',
             bestTime: 'Morning',
             description: 'Misty weather adds dramatic atmosphere to ancient streets, historic quarters, and temples.'
           }
@@ -101,7 +92,6 @@ class ActivityRecommender {
         suggestions.push(
           {
             title: 'City Highlights & Landmark Walk',
-            category: 'Sightseeing',
             bestTime: 'Flexible',
             description: 'Overcast skies provide soft lighting and comfortable conditions for sightseeing and city exploration.'
           }
@@ -118,7 +108,6 @@ class ActivityRecommender {
     if (['MY', 'SG', 'TH', 'ID', 'PH', 'VN'].includes(countryCode)) {
       suggestions.push({
         title: 'Explore Hawker Centers & Food Markets',
-        category: 'Food & Street Culture',
         bestTime: 'Evening / Meal times',
         description: 'Covered hawker centers and food markets offer world-class cuisine and authentic street food.'
       });
@@ -127,7 +116,7 @@ class ActivityRecommender {
     return { suggestions: suggestions.slice(0, 3) };
   }
 
-  determineWeatherCategory(weather) {
+  determineWeatherCondition(weather) {
     if (this.snowyWeatherCodes.has(weather.weatherCode)) {
       return 'snowy';
     }

@@ -1,40 +1,27 @@
-const CountryService = require('./js/services/CountryService');
+const Destination = require('./js/models/Destination');
 const OpenMeteoService = require('./js/services/OpenMeteoService');
+const CountryService = require('./js/services/CountryService');
 const CurrencyService = require('./js/services/CurrencyService');
 const ActivityRecommender = require('./js/logics/ActivityRecommender');
 const TripRepository = require('./js/data/TripRepository');
-const Destination = require('./js/models/Destination');
 const Trip = require('./js/models/Trip');
 
-// Services
-let countryService;
-let weatherService;
-let currencyService;
-let tripRepository;
+// Services & State
+const weatherService = new OpenMeteoService();
+const countryService = new CountryService();
+const currencyService = new CurrencyService();
 const activityRecommender = new ActivityRecommender();
+const tripRepository = new TripRepository();
 
-// Active Destination State
 let currentDestination = null;
 let currentCountry = null;
 let currentWeather = null;
 let currentRecommendations = [];
+let conversionDirection = 'myr_to_place';
 let currenciesLoaded = false;
 let toastTimeout = null;
 
-// Modal Form State
-let attachedRecommendations = [];
-let currentCountryCode = '';
-let currentTripCurrency = 'RM';
-
-// Request tokens to ignore outdated async responses
-let countryRequestToken = 0;
-let weatherRequestToken = 0;
-let currencyRequestToken = 0;
-
 // DOM Elements
-const tripsBadge = document.getElementById('tripsBadge');
-const appToast = document.getElementById('appToast');
-
 const destinationType = document.getElementById('destinationType');
 const destinationTitle = document.getElementById('destinationTitle');
 const destinationSubtitle = document.getElementById('destinationSubtitle');
@@ -42,7 +29,9 @@ const saveTripBtn = document.getElementById('saveTripBtn');
 const weatherInfo = document.getElementById('weatherInfo');
 const countryInfo = document.getElementById('countryInfo');
 const recommendationsInfo = document.getElementById('recommendationsInfo');
+const appToast = document.getElementById('appToast');
 
+// Currency DOM Elements
 const currencyConverter = document.getElementById('currencyConverter');
 const currencyForm = document.getElementById('currencyForm');
 const currencyAmount = document.getElementById('currencyAmount');
@@ -57,6 +46,7 @@ const currencyConvertBtn = document.getElementById('currencyConvertBtn');
 const currencyResult = document.getElementById('currencyResult');
 const currencyMessage = document.getElementById('currencyMessage');
 
+// Modal DOM Elements
 const tripModal = document.getElementById('tripModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
@@ -72,411 +62,206 @@ const formNotes = document.getElementById('formNotes');
 const formRecommendationsPreview = document.getElementById('formRecommendationsPreview');
 const formErrorMessage = document.getElementById('formErrorMessage');
 
-function updateTripsBadge() {
-  const count = tripRepository.getAll().length;
-  tripsBadge.textContent = String(count);
-  tripsBadge.hidden = count === 0;
-}
-
-function showToast(message, type) {
-  if (toastTimeout) {
-    clearTimeout(toastTimeout);
-  }
-
+function showToast(message, type = 'success') {
+  if (toastTimeout) clearTimeout(toastTimeout);
   appToast.textContent = message;
   appToast.className = `app-toast toast-${type}`;
   appToast.hidden = false;
-
-  toastTimeout = setTimeout(() => {
-    appToast.hidden = true;
-  }, 4000);
+  toastTimeout = setTimeout(() => { appToast.hidden = true; }, 4000);
 }
 
-function clearPanel(panel) {
-  panel.textContent = '';
-  panel.hidden = true;
-}
-
-function showPanelLoading(panel, title, text) {
-  panel.innerHTML = `
-    <header class="panel-header"><h2>${title}</h2></header>
-    <p class="panel-loading"><span class="loading-spinner"></span> ${text}</p>
-  `;
-  panel.hidden = false;
-}
-
-function showPanelError(panel, title, errorText) {
-  panel.innerHTML = `
-    <header class="panel-header"><h2>${title}</h2></header>
-    <p class="panel-error">${errorText}</p>
-  `;
-  panel.hidden = false;
-}
-
-// -------------------------------------------------------------
-// Weather & Country Display
-// -------------------------------------------------------------
-
-async function loadWeather(destination) {
-  const token = ++weatherRequestToken;
-  clearPanel(weatherInfo);
-
+// Weather & Country
+async function loadWeather(dest) {
   try {
-    showPanelLoading(weatherInfo, 'Current Weather', 'Fetching current weather...');
-    const weather = await weatherService.getWeather(destination);
-
-    if (token !== weatherRequestToken) return;
-
-    currentWeather = weather;
-    renderWeather(weather);
-    updateRecommendations();
+    currentWeather = await weatherService.getWeather(dest);
+    weatherInfo.innerHTML = `
+      <header class="panel-header"><h2>Current Weather</h2></header>
+      <div class="weather-current">
+        <span class="weather-temp">${currentWeather.getTemperatureLabel()}</span>
+        <div class="weather-details">
+          <p class="weather-desc">${currentWeather.getDescription()}</p>
+          <p class="weather-meta">
+            <span>Wind: ${currentWeather.getWindLabel()}</span>
+            <span>Humidity: ${currentWeather.getHumidityLabel()}</span>
+          </p>
+        </div>
+      </div>`;
+    weatherInfo.hidden = false;
   } catch (error) {
-    if (token !== weatherRequestToken) return;
-    currentWeather = null;
-    showPanelError(weatherInfo, 'Current Weather', `Unable to load weather: ${error.message}`);
-    updateRecommendations();
+    weatherInfo.innerHTML = `<header class="panel-header"><h2>Current Weather</h2></header><p class="panel-error">Unable to load weather: ${error.message}</p>`;
+    weatherInfo.hidden = false;
   }
+  updateRecommendations();
 }
 
-function renderWeather(weather) {
-  weatherInfo.innerHTML = `
-    <header class="panel-header"><h2>Current Weather</h2></header>
-    <div class="weather-current">
-      <span class="weather-temp">${weather.getTemperatureLabel()}</span>
-      <div class="weather-details">
-        <p class="weather-desc">${weather.getDescription()}</p>
-        <p class="weather-meta">
-          <span>Wind: ${weather.getWindLabel()}</span>
-          <span>Humidity: ${weather.getHumidityLabel()}</span>
-        </p>
-      </div>
-    </div>
-  `;
-  weatherInfo.hidden = false;
-}
-
-async function loadCountry(destination) {
-  const token = ++countryRequestToken;
-  clearPanel(countryInfo);
-
+async function loadCountry(dest) {
   try {
-    showPanelLoading(countryInfo, 'About this Place', 'Fetching country facts...');
-    let country = null;
-
-    if (destination.countryCode) {
-      try {
-        country = await countryService.getCountry(destination.countryCode);
-      } catch (e) {
-        country = null;
-      }
+    if (dest.countryCode) {
+      currentCountry = await countryService.getCountry(dest.countryCode);
     }
-
-    if (token !== countryRequestToken) return;
-
-    currentCountry = country;
-
-    if (country) {
-      renderCountry(country);
-    } else {
-      showPanelError(countryInfo, 'About this Place', 'No regional facts found for this location.');
+    if (currentCountry) {
+      countryInfo.innerHTML = `
+        <header class="panel-header"><h2>About ${currentCountry.name}</h2></header>
+        <div class="country-facts-grid">
+          <div class="fact-item"><span class="fact-label">Capital</span><span class="fact-val">${currentCountry.capital || 'N/A'}</span></div>
+          <div class="fact-item"><span class="fact-label">Region</span><span class="fact-val">${currentCountry.getRegionLabel() || 'N/A'}</span></div>
+          <div class="fact-item"><span class="fact-label">Population</span><span class="fact-val">${currentCountry.getPopulationLabel() || 'N/A'}</span></div>
+          <div class="fact-item"><span class="fact-label">Currency</span><span class="fact-val">${currentCountry.getCurrencyLabel() || 'N/A'}</span></div>
+          <div class="fact-item"><span class="fact-label">Languages</span><span class="fact-val">${currentCountry.getLanguagesLabel() || 'N/A'}</span></div>
+        </div>`;
+      countryInfo.hidden = false;
     }
-
-    updateRecommendations();
-    setupCurrencyConverter();
-  } catch (error) {
-    if (token !== countryRequestToken) return;
-    currentCountry = null;
-    showPanelError(countryInfo, 'About this Place', `Unable to load facts: ${error.message}`);
-    updateRecommendations();
+  } catch {
+    countryInfo.innerHTML = '<header class="panel-header"><h2>About this Place</h2></header><p class="panel-error">No regional facts found for this location.</p>';
+    countryInfo.hidden = false;
   }
+  updateRecommendations();
+  setupCurrencyConverter();
 }
 
-function renderCountry(country) {
-  countryInfo.innerHTML = `
-    <header class="panel-header"><h2>About ${country.name}</h2></header>
-    <div class="country-facts-grid">
-      <div class="fact-item"><span class="fact-label">Capital</span><span class="fact-val">${country.capital || 'N/A'}</span></div>
-      <div class="fact-item"><span class="fact-label">Region</span><span class="fact-val">${country.getRegionLabel() || 'N/A'}</span></div>
-      <div class="fact-item"><span class="fact-label">Population</span><span class="fact-val">${country.getPopulationLabel() || 'N/A'}</span></div>
-      <div class="fact-item"><span class="fact-label">Currency</span><span class="fact-val">${country.getCurrencyLabel() || 'N/A'}</span></div>
-      <div class="fact-item"><span class="fact-label">Languages</span><span class="fact-val">${country.getLanguagesLabel() || 'N/A'}</span></div>
-    </div>
-  `;
-  countryInfo.hidden = false;
+function updateRecommendations() {
+  if (!currentDestination) return;
+  const result = activityRecommender.recommend(currentDestination, currentCountry, currentWeather);
+  currentRecommendations = result.suggestions || [];
+  if (currentRecommendations.length === 0) {
+    recommendationsInfo.hidden = true;
+    return;
+  }
+  const itemsHtml = currentRecommendations.map((a) => `
+    <article class="activity-card">
+      <div class="activity-header"><span class="activity-best-time">${a.bestTime || 'Anytime'}</span></div>
+      <h3 class="activity-title">${a.title}</h3>
+      <p class="activity-desc">${a.description}</p>
+    </article>`).join('');
+  recommendationsInfo.innerHTML = `<header class="panel-header"><h2>Suggested Activities</h2></header><div class="activities-grid">${itemsHtml}</div>`;
+  recommendationsInfo.hidden = false;
 }
 
-// -------------------------------------------------------------
 // Currency Converter
-// -------------------------------------------------------------
-
-// Conversion direction: 'myr_to_place' or 'place_to_myr'
-let conversionDirection = 'myr_to_place';
-let myrSideCurrency = 'MYR';
-
 function getPlaceCurrencyCode() {
-  if (currentCountry && currentCountry.currencies && currentCountry.currencies.length > 0) {
-    const code = currentCountry.currencies[0].code;
-    if (code) return code.toUpperCase();
-  }
-  return 'USD';
+  return currentCountry?.currencies?.[0]?.code?.toUpperCase() || 'USD';
 }
 
 function updateCurrencyConverterUI() {
   const placeCurrency = getPlaceCurrencyCode();
-  const selectEl = conversionDirection === 'myr_to_place' ? currencyFrom : currencyTo;
+  const isMyrToPlace = conversionDirection === 'myr_to_place';
 
-  if (selectEl.options.length > 0) {
-    const hasOption = Array.from(selectEl.options).some((o) => o.value === myrSideCurrency);
-    if (hasOption) {
-      selectEl.value = myrSideCurrency;
-    }
-  }
+  currencyFrom.hidden = !isMyrToPlace;
+  currencyFromStatic.hidden = isMyrToPlace;
+  if (currencyFromLabel) currencyFromLabel.hidden = !isMyrToPlace;
+  if (!isMyrToPlace) currencyFromStatic.textContent = placeCurrency;
 
-  if (conversionDirection === 'myr_to_place') {
-    // FROM: Select (editable, defaults to MYR)
-    currencyFrom.hidden = false;
-    currencyFromStatic.hidden = true;
-    if (currencyFromLabel) currencyFromLabel.hidden = false;
-
-    // TO: Static badge (place currency) - No label per requirements
-    currencyTo.hidden = true;
-    currencyToStatic.textContent = placeCurrency;
-    currencyToStatic.hidden = false;
-    if (currencyToLabel) currencyToLabel.hidden = true;
-  } else {
-    // FROM: Static badge (place currency) - No label per requirements
-    currencyFrom.hidden = true;
-    currencyFromStatic.textContent = placeCurrency;
-    currencyFromStatic.hidden = false;
-    if (currencyFromLabel) currencyFromLabel.hidden = true;
-
-    // TO: Select (editable, defaults to MYR)
-    currencyTo.hidden = false;
-    currencyToStatic.hidden = true;
-    if (currencyToLabel) currencyToLabel.hidden = false;
-  }
+  currencyTo.hidden = isMyrToPlace;
+  currencyToStatic.hidden = !isMyrToPlace;
+  if (currencyToLabel) currencyToLabel.hidden = isMyrToPlace;
+  if (isMyrToPlace) currencyToStatic.textContent = placeCurrency;
 }
 
 async function setupCurrencyConverter() {
-  const token = ++currencyRequestToken;
-
+  currencyConverter.hidden = false;
   try {
-    currencyConverter.hidden = false;
-
     if (!currenciesLoaded) {
       const currencies = await currencyService.getCurrencies();
-      if (token !== currencyRequestToken) return;
-      populateCurrencySelects(currencies);
+      const optionsHtml = Object.entries(currencies)
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([code, name]) => `<option value="${code}">${code} — ${name}</option>`)
+        .join('');
+      currencyFrom.innerHTML = optionsHtml;
+      currencyTo.innerHTML = optionsHtml;
+      currencyFrom.value = 'MYR';
+      currencyTo.value = 'MYR';
       currenciesLoaded = true;
     }
-
-    if (token !== currencyRequestToken) return;
-
     updateCurrencyConverterUI();
     currencyResult.hidden = true;
     currencyMessage.hidden = true;
   } catch (error) {
-    if (token !== currencyRequestToken) return;
-    currencyConverter.hidden = false;
     currencyMessage.textContent = `Unable to load currencies: ${error.message}`;
     currencyMessage.hidden = false;
   }
 }
 
-function populateCurrencySelects(currencies) {
-  currencyFrom.textContent = '';
-  currencyTo.textContent = '';
-
-  const sorted = Object.entries(currencies).sort((a, b) => a[0].localeCompare(b[0]));
-
-  for (const [code, name] of sorted) {
-    const optFrom = document.createElement('option');
-    optFrom.value = code;
-    optFrom.textContent = `${code} — ${name}`;
-    currencyFrom.appendChild(optFrom);
-
-    const optTo = document.createElement('option');
-    optTo.value = code;
-    optTo.textContent = `${code} — ${name}`;
-    currencyTo.appendChild(optTo);
-  }
-}
-
-function handleCurrencySwap() {
-  conversionDirection = conversionDirection === 'myr_to_place' ? 'place_to_myr' : 'myr_to_place';
-  updateCurrencyConverterUI();
-  currencyResult.hidden = true;
-  currencyMessage.hidden = true;
-}
-
 async function handleCurrencySubmit(e) {
   e.preventDefault();
-
   const amount = Number(currencyAmount.value);
   const placeCurrency = getPlaceCurrencyCode();
-
-  let from, to;
-  if (conversionDirection === 'myr_to_place') {
-    from = currencyFrom.value || myrSideCurrency;
-    to = placeCurrency;
-  } else {
-    from = placeCurrency;
-    to = currencyTo.value || myrSideCurrency;
-  }
-
-  currencyMessage.textContent = '';
-  currencyMessage.hidden = true;
-  currencyResult.hidden = true;
+  const isMyrToPlace = conversionDirection === 'myr_to_place';
+  const from = isMyrToPlace ? (currencyFrom.value || 'MYR') : placeCurrency;
+  const to = isMyrToPlace ? placeCurrency : (currencyTo.value || 'MYR');
 
   if (isNaN(amount) || amount <= 0) {
     currencyMessage.textContent = 'Please enter a valid amount greater than zero.';
     currencyMessage.hidden = false;
+    currencyResult.hidden = true;
     return;
   }
 
   try {
     currencyConvertBtn.disabled = true;
     currencyConvertBtn.textContent = 'Converting...';
-
-    const conversion = await currencyService.convert(from, to, amount);
+    const conv = await currencyService.convert(from, to, amount);
     currencyResult.innerHTML = `
-      <span>${conversion.getFormattedOriginalAmount()} =</span>
-      <strong>${conversion.getFormattedConvertedAmount()}</strong>
-      <span class="rate-sub">Rate: ${conversion.getExchangeRateLabel()}</span>
-    `;
+      <span>${conv.getFormattedOriginalAmount()} =</span>
+      <strong>${conv.getFormattedConvertedAmount()}</strong>
+      <span class="rate-sub">Rate: ${conv.getExchangeRateLabel()}</span>`;
     currencyResult.hidden = false;
+    currencyMessage.hidden = true;
   } catch (error) {
     currencyMessage.textContent = `Conversion failed: ${error.message}`;
     currencyMessage.hidden = false;
+    currencyResult.hidden = true;
   } finally {
     currencyConvertBtn.disabled = false;
     currencyConvertBtn.textContent = 'Convert';
   }
 }
 
-// -------------------------------------------------------------
-// Activity Recommendations
-// -------------------------------------------------------------
-
-function updateRecommendations() {
-  if (!currentDestination) return;
-
-  const result = activityRecommender.recommend(currentDestination, currentCountry, currentWeather);
-  currentRecommendations = result.suggestions || [];
-  renderRecommendations(currentRecommendations);
-}
-
-function renderRecommendations(suggestions) {
-  clearPanel(recommendationsInfo);
-
-  if (!suggestions || suggestions.length === 0) {
-    return;
-  }
-
-  const itemsHtml = suggestions
-    .map(
-      (a) => `
-      <article class="activity-card">
-        <div class="activity-header">
-          <span class="activity-category-tag">${a.category || 'Sightseeing'}</span>
-          <span class="activity-best-time">${a.bestTime || 'Anytime'}</span>
-        </div>
-        <h3 class="activity-title">${a.title}</h3>
-        <p class="activity-desc">${a.description}</p>
-      </article>
-    `
-    )
-    .join('');
-
-  recommendationsInfo.innerHTML = `
-    <header class="panel-header"><h2>Suggested Activities</h2></header>
-    <div class="activities-grid">${itemsHtml}</div>
-  `;
-  recommendationsInfo.hidden = false;
-}
-
-// -------------------------------------------------------------
-// Save as Trip Plan Modal
-// -------------------------------------------------------------
-
+// Modal & Save Trip
 function openCreateTripModal() {
   if (!currentDestination) return;
-
   tripForm.reset();
-  formErrorMessage.textContent = '';
   formErrorMessage.hidden = true;
-  attachedRecommendations = [];
-
   modalTitle.textContent = 'Save as Trip Plan';
 
   formDestinationName.value = currentDestination.name || '';
   formCountry.value = currentDestination.country || '';
-  currentCountryCode = currentDestination.countryCode || '';
-
-  const today = new Date().toISOString().split('T')[0];
-  formTravelDate.value = today;
+  formTravelDate.value = new Date().toISOString().split('T')[0];
   formDuration.value = '5';
   formTravelers.value = '1';
   formBudget.value = '2000';
 
-  if (currentCountry && currentCountry.currencies && currentCountry.currencies.length > 0) {
-    currentTripCurrency = currentCountry.currencies[0].code || 'RM';
-  } else {
-    currentTripCurrency = 'RM';
-  }
-
+  const tripCurrency = currentCountry?.currencies?.[0]?.code || 'RM';
   const prefixEl = tripForm.querySelector('.currency-prefix');
-  if (prefixEl) {
-    prefixEl.textContent = currentTripCurrency;
-  }
+  if (prefixEl) prefixEl.textContent = tripCurrency;
 
-  if (currentRecommendations && currentRecommendations.length > 0) {
-    attachedRecommendations = currentRecommendations.map((r) => ({
-      title: r.title,
-      category: r.category,
-      description: r.description,
-    }));
-  }
+  formRecommendationsPreview.innerHTML = currentRecommendations.length > 0
+    ? `<div class="form-recs-badges">${currentRecommendations.map((r) => `<span class="form-rec-chip">${r.title}</span>`).join('')}</div>`
+    : '<span class="text-muted">No recommendations attached.</span>';
 
-  renderFormRecommendations();
   tripModal.hidden = false;
-}
-
-function renderFormRecommendations() {
-  if (!attachedRecommendations || attachedRecommendations.length === 0) {
-    formRecommendationsPreview.innerHTML = '<span class="text-muted">No recommendations attached.</span>';
-    return;
-  }
-
-  const badgesHtml = attachedRecommendations
-    .map((r) => `<span class="form-rec-chip">${r.title}</span>`)
-    .join('');
-
-  formRecommendationsPreview.innerHTML = `<div class="form-recs-badges">${badgesHtml}</div>`;
 }
 
 function closeTripModal() {
   tripModal.hidden = true;
   tripForm.reset();
-  formErrorMessage.textContent = '';
   formErrorMessage.hidden = true;
 }
 
 function handleTripFormSubmit(e) {
   e.preventDefault();
-
+  const tripCurrency = currentCountry?.currencies?.[0]?.code || 'RM';
   const tripData = {
     destinationName: formDestinationName.value.trim(),
     destinationType: currentDestination ? currentDestination.getTypeLabel() : 'Destination',
     country: formCountry.value.trim(),
-    countryCode: currentCountryCode.trim().toUpperCase(),
+    countryCode: (currentDestination?.countryCode || '').trim().toUpperCase(),
     travelDate: formTravelDate.value,
     durationDays: Number(formDuration.value),
     travelers: Number(formTravelers.value),
     budget: Number(formBudget.value),
-    currency: currentTripCurrency,
+    currency: tripCurrency,
     notes: formNotes.value.trim(),
-    recommendations: attachedRecommendations,
+    recommendations: currentRecommendations.map((r) => ({ title: r.title, description: r.description })),
   };
 
   const validation = Trip.validate(tripData);
@@ -488,19 +273,15 @@ function handleTripFormSubmit(e) {
 
   try {
     tripRepository.create(tripData);
-    showToast(`Trip to "${tripData.destinationName}" saved to My Trips!`, 'success');
+    showToast(`Trip to "${tripData.destinationName}" saved to My Trips!`);
     closeTripModal();
-    updateTripsBadge();
   } catch (error) {
     formErrorMessage.textContent = error.message;
     formErrorMessage.hidden = false;
   }
 }
 
-// -------------------------------------------------------------
 // Initialization
-// -------------------------------------------------------------
-
 async function start() {
   const raw = sessionStorage.getItem('currentDestination') || localStorage.getItem('currentDestination');
   if (!raw) {
@@ -509,45 +290,32 @@ async function start() {
   }
 
   try {
-    currentDestination = new Destination(JSON.parse(raw));
-  } catch (e) {
+    currentDestination = Destination.create(JSON.parse(raw));
+  } catch {
     window.location.href = 'discover.html';
     return;
   }
 
-  countryService = new CountryService();
-  weatherService = new OpenMeteoService();
-  currencyService = new CurrencyService();
-  tripRepository = new TripRepository();
-
   destinationTitle.textContent = currentDestination.name;
   destinationSubtitle.textContent = currentDestination.formatted;
   destinationType.textContent = currentDestination.getTypeLabel();
-  destinationType.hidden = false;
 
   currencyForm.addEventListener('submit', handleCurrencySubmit);
-  currencySwapBtn.addEventListener('click', handleCurrencySwap);
-  currencyFrom.addEventListener('change', () => {
-    myrSideCurrency = currencyFrom.value;
-  });
-  currencyTo.addEventListener('change', () => {
-    myrSideCurrency = currencyTo.value;
+  currencySwapBtn.addEventListener('click', () => {
+    conversionDirection = conversionDirection === 'myr_to_place' ? 'place_to_myr' : 'myr_to_place';
+    updateCurrencyConverterUI();
+    currencyResult.hidden = true;
+    currencyMessage.hidden = true;
   });
 
   saveTripBtn.addEventListener('click', openCreateTripModal);
   modalCloseBtn.addEventListener('click', closeTripModal);
   modalCancelBtn.addEventListener('click', closeTripModal);
+  tripModal.addEventListener('click', (e) => { if (e.target === tripModal) closeTripModal(); });
   tripForm.addEventListener('submit', handleTripFormSubmit);
-
-  tripModal.addEventListener('click', (e) => {
-    if (e.target === tripModal) closeTripModal();
-  });
-
-  updateTripsBadge();
 
   loadWeather(currentDestination);
   loadCountry(currentDestination);
-  setupCurrencyConverter();
 }
 
 start().catch((error) => {
