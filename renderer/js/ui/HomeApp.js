@@ -32,6 +32,7 @@ class HomeApp {
     // Discover & Destination Views
     this.destinationForm = document.getElementById('destinationForm');
     this.destinationInput = document.getElementById('destinationInput');
+    this.destinationClearBtn = document.getElementById('destinationClearBtn');
     this.destinationSearchButton = document.getElementById('destinationSearchBtn');
     this.destinationMessage = document.getElementById('destinationMessage');
     this.destinationResults = document.getElementById('destinationResults');
@@ -39,12 +40,12 @@ class HomeApp {
     this.discoverView = document.getElementById('discoverView');
     this.destinationView = document.getElementById('destinationView');
     this.backButton = document.getElementById('backBtn');
+    this.destinationCover = document.getElementById('destinationCover');
+    this.destinationCoverCredit = document.getElementById('destinationCoverCredit');
     this.destinationType = document.getElementById('destinationType');
     this.destinationTitle = document.getElementById('destinationTitle');
     this.destinationSubtitle = document.getElementById('destinationSubtitle');
     this.saveTripBtn = document.getElementById('saveTripBtn');
-    this.destinationPhotos = document.getElementById('destinationPhotos');
-    this.photosGrid = document.getElementById('photosGrid');
     this.photosMessage = document.getElementById('photosMessage');
     this.weatherInfo = document.getElementById('weatherInfo');
     this.countryInfo = document.getElementById('countryInfo');
@@ -60,7 +61,6 @@ class HomeApp {
     this.categoryFilters = document.getElementById('categoryFilters');
     this.poiMessage = document.getElementById('poiMessage');
     this.poiResults = document.getElementById('poiResults');
-    this.loadMoreButton = document.getElementById('loadMoreBtn');
 
     // My Trips View Elements
     this.tripsView = document.getElementById('tripsView');
@@ -139,10 +139,26 @@ class HomeApp {
         const query = chip.dataset.query;
         if (query && this.destinationInput) {
           this.destinationInput.value = query;
+          if (this.destinationClearBtn) {
+            this.destinationClearBtn.hidden = false;
+          }
           this.searchDestinations();
         }
       });
     });
+
+    // Clear search input button
+    if (this.destinationInput && this.destinationClearBtn) {
+      this.destinationInput.addEventListener('input', () => {
+        this.destinationClearBtn.hidden = !this.destinationInput.value.trim();
+      });
+
+      this.destinationClearBtn.addEventListener('click', () => {
+        this.destinationInput.value = '';
+        this.destinationClearBtn.hidden = true;
+        this.destinationInput.focus();
+      });
+    }
 
     // Save as Trip Plan button on Destination page
     if (this.saveTripBtn) {
@@ -197,10 +213,6 @@ class HomeApp {
 
     this.backButton.addEventListener('click', () => {
       this.showDiscoverView();
-    });
-
-    this.loadMoreButton.addEventListener('click', () => {
-      this.loadPois({ append: true });
     });
 
     if (this.currencyForm) {
@@ -318,7 +330,6 @@ class HomeApp {
     this.offset = 0;
     this.seenPoiIds.clear();
     this.poiResults.textContent = '';
-    this.loadMoreButton.hidden = true;
 
     this.destinationType.textContent = destination.getTypeLabel();
     this.destinationTitle.textContent = destination.getDisplayName();
@@ -424,13 +435,12 @@ class HomeApp {
   }
 
   clearPhotos() {
-    if (!this.destinationPhotos) {
-      return;
+    if (this.destinationCover) {
+      this.destinationCover.hidden = true;
+      this.destinationCover.style.backgroundImage = 'none';
     }
-
-    this.destinationPhotos.hidden = true;
-    if (this.photosGrid) {
-      this.photosGrid.textContent = '';
+    if (this.destinationCoverCredit) {
+      this.destinationCoverCredit.textContent = '';
     }
     if (this.photosMessage) {
       this.photosMessage.textContent = '';
@@ -438,26 +448,18 @@ class HomeApp {
     }
   }
 
-  // Load photos from Unsplash for the destination asynchronously
+  // Load a single photo from Unsplash for the destination hero cover banner asynchronously
   async loadPhotos(destination) {
-    if (!this.destinationPhotos || !this.unsplashService) {
+    if (!this.destinationCover || !this.unsplashService) {
       return;
     }
 
     if (!this.unsplashService.hasAccessKey()) {
-      return; // If user hasn't configured Unsplash key, keep section hidden without breaking page
+      return; // If user hasn't configured Unsplash key, keep banner hidden without breaking page
     }
 
     const requestToken = ++this.photosRequestToken;
     this.clearPhotos();
-    this.destinationPhotos.hidden = false;
-
-    // Show loading skeleton / indicator
-    if (this.photosMessage) {
-      this.photosMessage.textContent = 'Loading destination photography...';
-      this.photosMessage.className = 'photos-message photos-loading';
-      this.photosMessage.hidden = false;
-    }
 
     try {
       // Use clean destination query: name or city
@@ -465,64 +467,43 @@ class HomeApp {
         ? destination.name
         : (destination.name || destination.getDisplayName());
 
-      const photos = await this.unsplashService.searchPhotos(query, 4);
+      // Fetch 1 landscape photo for the background cover
+      const photos = await this.unsplashService.searchPhotos(query, 1);
 
       if (requestToken !== this.photosRequestToken) {
         return; // Prevent outdated response from replacing newer search
       }
 
       if (photos.length === 0) {
-        if (this.photosMessage) {
-          this.photosMessage.textContent = `No photography found for "${query}".`;
-          this.photosMessage.className = 'photos-message';
-          this.photosMessage.hidden = false;
-        }
-        return;
+        return; // Minimalist approach: simply don't show cover if no photo found
       }
 
-      this.renderPhotos(photos);
+      this.renderCoverPhoto(photos[0]);
     } catch (error) {
       if (requestToken !== this.photosRequestToken) {
         return;
       }
-
-      if (this.photosMessage) {
-        this.photosMessage.textContent = error.message;
-        this.photosMessage.className = 'photos-message error-text';
-        this.photosMessage.hidden = false;
-      }
+      // Silently fail or log, without disrupting destination details
+      console.warn('Unsplash cover photo error:', error);
     }
   }
 
-  renderPhotos(photos) {
-    if (!this.photosGrid) {
+  renderCoverPhoto(photo) {
+    if (!this.destinationCover) {
       return;
     }
 
-    this.photosGrid.textContent = '';
-    if (this.photosMessage) {
-      this.photosMessage.hidden = true;
+    const imageUrl = photo.urls.regular || photo.urls.full || photo.urls.small;
+    this.destinationCover.style.backgroundImage = `url("${imageUrl}")`;
+    this.destinationCover.hidden = false;
+
+    // Track download per Unsplash API guidelines
+    if (photo.links.downloadLocation) {
+      this.unsplashService.triggerDownload(photo.links.downloadLocation);
     }
 
-    for (const photo of photos) {
-      const card = document.createElement('figure');
-      card.className = 'photo-card';
-
-      const img = document.createElement('img');
-      img.className = 'photo-img';
-      img.src = photo.urls.regular || photo.urls.small;
-      img.alt = photo.altDescription;
-      img.loading = 'lazy';
-
-      // Track download on click per Unsplash API terms
-      img.addEventListener('click', () => {
-        if (photo.links.downloadLocation) {
-          this.unsplashService.triggerDownload(photo.links.downloadLocation);
-        }
-      });
-
-      const caption = document.createElement('figcaption');
-      caption.className = 'photo-caption';
+    if (this.destinationCoverCredit) {
+      this.destinationCoverCredit.textContent = '';
 
       const photographerLink = document.createElement('a');
       photographerLink.href = photo.getPhotographerAttributionUrl();
@@ -536,12 +517,8 @@ class HomeApp {
       unsplashLink.rel = 'noopener noreferrer';
       unsplashLink.textContent = 'Unsplash';
 
-      caption.append('Photo by ', photographerLink, ' on ', unsplashLink);
-      card.append(img, caption);
-      this.photosGrid.appendChild(card);
+      this.destinationCoverCredit.append('Photo by ', photographerLink, ' on ', unsplashLink);
     }
-
-    this.destinationPhotos.hidden = false;
   }
 
   // Build the shared label/value grid used by the weather and country panels.
@@ -622,10 +599,10 @@ class HomeApp {
     const summary = document.createElement('div');
     summary.className = 'info-summary';
 
-    const flag = document.createElement('span');
-    flag.className = 'info-flag';
-    flag.textContent = country.flag || '🏳️';
-    summary.appendChild(flag);
+    const flagIcon = document.createElement('span');
+    flagIcon.className = 'material-symbols-sharp info-flag-icon';
+    flagIcon.textContent = 'flag';
+    summary.appendChild(flagIcon);
 
     // A country page already shows the name in the heading, so only add it
     // when the destination is a city inside that country.
@@ -923,10 +900,6 @@ class HomeApp {
       const card = document.createElement('article');
       card.className = 'recommendation-item';
 
-      const badge = document.createElement('span');
-      badge.className = `recommendation-badge badge-${item.type}`;
-      badge.textContent = item.type;
-
       const title = document.createElement('h3');
       title.className = 'recommendation-title';
       title.textContent = item.title;
@@ -935,7 +908,7 @@ class HomeApp {
       desc.className = 'recommendation-desc';
       desc.textContent = item.description;
 
-      card.append(badge, title, desc);
+      card.append(title, desc);
       list.appendChild(card);
     }
 
@@ -995,37 +968,33 @@ class HomeApp {
     }
   }
 
-  async loadPois({ reset = false, append = false } = {}) {
+  async loadPois({ reset = false } = {}) {
     if (!this.destination || !this.selectedCategory) {
       return;
     }
 
-    // "Load more" must wait for the current request. A new category or
-    // destination is allowed to replace an in-flight request.
     if (this.isLoadingPois && !reset) {
       return;
     }
 
-    if (reset) {
-      this.offset = 0;
-      this.seenPoiIds.clear();
-      this.poiResults.textContent = '';
-      this.loadMoreButton.hidden = true;
-    }
+    this.offset = 0;
+    this.seenPoiIds.clear();
+    this.poiResults.textContent = '';
 
     const requestToken = ++this.requestToken;
     this.isLoadingPois = true;
-    this.setLoadMoreLoading(true);
     this.showPoiMessage(
       `Loading ${this.selectedCategory.label.toLowerCase()} in ${this.destination.getDisplayName()}...`,
       false
     );
 
     try {
+      // Locked fixed limit of 16 places to evenly fill the 4-column / 2-column grid
+      const fixedLimit = 16;
       const result = await this.geoapifyService.searchPlaces(
         this.destination,
         this.selectedCategory.getApiCategories(),
-        { limit: this.pageSize, offset: this.offset }
+        { limit: fixedLimit, offset: 0 }
       );
 
       if (requestToken !== this.requestToken) {
@@ -1051,12 +1020,12 @@ class HomeApp {
         return;
       }
 
-      this.renderPois(freshPois, append);
-      this.offset += this.pageSize;
-      this.loadMoreButton.hidden = !result.hasMore;
+      // Display locked count of places
+      const displayPois = freshPois.slice(0, fixedLimit);
+      this.renderPois(displayPois);
 
       this.showPoiMessage(
-        `Showing ${this.seenPoiIds.size} place(s) in ${this.destination.getDisplayName()}.`,
+        `Showing ${displayPois.length} places in ${this.destination.getDisplayName()}.`,
         false
       );
     } catch (error) {
@@ -1068,15 +1037,12 @@ class HomeApp {
     } finally {
       if (requestToken === this.requestToken) {
         this.isLoadingPois = false;
-        this.setLoadMoreLoading(false);
       }
     }
   }
 
-  renderPois(pois, append) {
-    if (!append) {
-      this.poiResults.textContent = '';
-    }
+  renderPois(pois) {
+    this.poiResults.textContent = '';
 
     for (const poi of pois) {
       this.poiResults.appendChild(this.createPoiCard(poi));
@@ -1131,7 +1097,6 @@ class HomeApp {
     this.clearPhotos();
     this.poiResults.textContent = '';
     this.poiMessage.textContent = '';
-    this.loadMoreButton.hidden = true;
     this.destinationView.hidden = true;
     if (this.tripsView) {
       this.tripsView.hidden = true;
@@ -1238,19 +1203,19 @@ class HomeApp {
 
     const metaDate = document.createElement('div');
     metaDate.className = 'trip-meta-item';
-    metaDate.innerHTML = `<span class="meta-label">📅 Date</span><span class="meta-val">${trip.getFormattedDate()}</span>`;
+    metaDate.innerHTML = `<span class="meta-label"><span class="material-symbols-sharp meta-icon">calendar_today</span>Date</span><span class="meta-val">${trip.getFormattedDate()}</span>`;
 
     const metaDuration = document.createElement('div');
     metaDuration.className = 'trip-meta-item';
-    metaDuration.innerHTML = `<span class="meta-label">⏱️ Duration</span><span class="meta-val">${trip.durationDays} ${trip.durationDays === 1 ? 'day' : 'days'}</span>`;
+    metaDuration.innerHTML = `<span class="meta-label"><span class="material-symbols-sharp meta-icon">schedule</span>Duration</span><span class="meta-val">${trip.durationDays} ${trip.durationDays === 1 ? 'day' : 'days'}</span>`;
 
     const metaTravelers = document.createElement('div');
     metaTravelers.className = 'trip-meta-item';
-    metaTravelers.innerHTML = `<span class="meta-label">👥 Travelers</span><span class="meta-val">${trip.travelers} ${trip.travelers === 1 ? 'person' : 'people'}</span>`;
+    metaTravelers.innerHTML = `<span class="meta-label"><span class="material-symbols-sharp meta-icon">group</span>Travelers</span><span class="meta-val">${trip.travelers} ${trip.travelers === 1 ? 'person' : 'people'}</span>`;
 
     const metaBudget = document.createElement('div');
     metaBudget.className = 'trip-meta-item';
-    metaBudget.innerHTML = `<span class="meta-label">💰 Budget</span><span class="meta-val highlight-val">${trip.getFormattedBudget()}</span>`;
+    metaBudget.innerHTML = `<span class="meta-label"><span class="material-symbols-sharp meta-icon">payments</span>Budget</span><span class="meta-val highlight-val">${trip.getFormattedBudget()}</span>`;
 
     metaGrid.append(metaDate, metaDuration, metaTravelers, metaBudget);
 
@@ -1393,7 +1358,7 @@ class HomeApp {
     for (const rec of recs) {
       const badge = document.createElement('span');
       badge.className = 'form-rec-chip';
-      badge.textContent = `💡 ${rec.title}`;
+      badge.textContent = rec.title;
       badgeList.appendChild(badge);
     }
 
@@ -1522,13 +1487,6 @@ class HomeApp {
     this.destinationSearchButton.textContent = isSearching
       ? 'Searching...'
       : 'Search';
-  }
-
-  setLoadMoreLoading(isLoading) {
-    this.loadMoreButton.disabled = isLoading;
-    this.loadMoreButton.textContent = isLoading
-      ? 'Loading...'
-      : 'Load more places';
   }
 }
 

@@ -3,18 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <title>JomJalan — Discover</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png" />
 </head>
 <body>
   <nav class="app-navbar">
     <div class="nav-brand">
-      <span class="nav-logo">✈️</span>
+      <span class="material-symbols-sharp nav-logo-icon">flight_takeoff</span>
       <span class="nav-title">JomJalan</span>
     </div>
     <div class="nav-links">
-      <button type="button" id="navDiscoverBtn" class="nav-link active">🔍 Discover</button>
-      <button type="button" id="navTripsBtn" class="nav-link">🎒 My Trips <span id="tripsBadge" class="nav-badge" hidden>0</span></button>
+      <button type="button" id="navDiscoverBtn" class="nav-link active">
+        <span class="material-symbols-sharp icon-sm">search</span>
+        <span>Discover</span>
+      </button>
+      <button type="button" id="navTripsBtn" class="nav-link">
+        <span class="material-symbols-sharp icon-sm">luggage</span>
+        <span>My Trips</span>
+        <span id="tripsBadge" hidden></span>
+      </button>
     </div>
   </nav>
 
@@ -22,43 +30,69 @@
     <!-- Notification banner for CRUD feedback -->
     <div id="appToast" class="app-toast" hidden role="alert" aria-live="polite"></div>
 
-    <section id="discoverView" class="view">
-      <header class="home-header">
-        <h1>Discover Places</h1>
-      </header>
+    <section id="discoverView" class="view discover-view">
+      <!-- Hero section: 100% width, 50vh height with centered title and search bar -->
+      <div class="hero-banner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <header class="home-header">
+            <h1 class="hero-title">Discover Places</h1>
+          </header>
 
-      <!-- Search destinations -->
-      <form id="destinationForm" class="search-form">
-        <input
-          type="text"
-          id="destinationInput"
-          placeholder="Search country or city (e.g. Japan, London, Tokyo)"
-          aria-label="Country or city"
-          autocomplete="off"
-        />
-        <button type="submit" id="destinationSearchBtn">Search</button>
-      </form>
-
-      <!-- Quick destination suggestion chips -->
-      <div class="quick-destinations" aria-label="Suggested destinations">
-        <button type="button" class="quick-chip" data-query="Tokyo">🇯🇵 Tokyo</button>
-        <button type="button" class="quick-chip" data-query="Kuala Lumpur">🇲🇾 Kuala Lumpur</button>
-        <button type="button" class="quick-chip" data-query="Paris">🇫🇷 Paris</button>
-        <button type="button" class="quick-chip" data-query="London">🇬🇧 London</button>
-        <button type="button" class="quick-chip" data-query="Seoul">🇰🇷 Seoul</button>
+          <!-- Search destinations -->
+          <form id="destinationForm" class="search-form hero-search-form">
+            <div class="search-input-wrap">
+              <input
+                type="text"
+                id="destinationInput"
+                placeholder="Search country or city (e.g. Japan, London, Tokyo)"
+                aria-label="Country or city"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                id="destinationClearBtn"
+                class="search-clear-btn"
+                aria-label="Clear search input"
+                title="Clear"
+                hidden
+              ><span class="material-symbols-sharp">close</span></button>
+            </div>
+            <button type="submit" id="destinationSearchBtn">Search</button>
+          </form>
+        </div>
       </div>
 
-      <p id="destinationMessage" class="message" role="status"></p>
+      <!-- Below the hero banner: popular destinations centered -->
+      <div class="popular-destinations-section">
+        <h2 class="popular-title">Popular Destinations</h2>
+        <div class="quick-destinations" aria-label="Popular destinations">
+          <button type="button" class="quick-chip" data-query="Tokyo">Tokyo</button>
+          <button type="button" class="quick-chip" data-query="Kuala Lumpur">Kuala Lumpur</button>
+          <button type="button" class="quick-chip" data-query="Paris">Paris</button>
+          <button type="button" class="quick-chip" data-query="London">London</button>
+          <button type="button" class="quick-chip" data-query="Seoul">Seoul</button>
+        </div>
+      </div>
 
-      <section
-        id="destinationResults"
-        class="destination-results"
-        aria-live="polite"
-      ></section>
+      <div class="discover-content">
+        <p id="destinationMessage" class="message" role="status"></p>
+
+        <section
+          id="destinationResults"
+          class="destination-results"
+          aria-live="polite"
+        ></section>
+      </div>
     </section>
 
-    <section id="destinationView" class="view" hidden>
-      <button type="button" id="backBtn" class="back-button">← Back</button>
+    <section id="destinationView" class="view destination-view" hidden>
+      <div class="destination-top-bar">
+        <button type="button" id="backBtn" class="back-button">
+          <span class="material-symbols-sharp icon-sm">arrow_back</span>
+          <span>Back</span>
+        </button>
+      </div>
 
       <div class="destination-header-row">
         <header class="destination-header">
@@ -67,43 +101,52 @@
           <p id="destinationSubtitle" class="tagline"></p>
         </header>
         <div class="destination-actions">
-          <button type="button" id="saveTripBtn" class="primary-btn save-trip-btn">➕ Save as Trip Plan</button>
+          <button type="button" id="saveTripBtn" class="primary-btn save-trip-btn">
+            <span class="material-symbols-sharp icon-sm">add</span>
+            <span>Save as Trip Plan</span>
+          </button>
         </div>
       </div>
 
-      <!-- Destination Photos Gallery from Unsplash API -->
-      <section id="destinationPhotos" class="destination-photos-section" aria-live="polite" hidden>
-        <div class="photos-header">
-          <h2 class="photos-title">Photos</h2>
-          <span class="photos-attribution-note"><a href="https://unsplash.com/?utm_source=jomjalan&utm_medium=referral" target="_blank" rel="noopener noreferrer">via Unsplash</a></span>
+      <!-- Destination Photos Status / Feedback if needed -->
+      <p id="photosMessage" class="photos-message" role="status" hidden></p>
+
+      <!-- Two-column split layout: Left (Background Cover + Country Info), Right (Weather + Suggested Activities) -->
+      <div class="places-split-layout">
+        <div class="places-column places-column-left">
+          <!-- Country/city background image banner (stays within left half of page) -->
+          <div id="destinationCover" class="destination-cover-banner" hidden>
+            <div class="destination-cover-overlay"></div>
+            <div id="destinationCoverCredit" class="destination-cover-credit"></div>
+          </div>
+
+          <!-- Country facts loaded from countries.dev, positioned directly below the background image -->
+          <section
+            id="countryInfo"
+            class="info-panel country-info"
+            aria-live="polite"
+            hidden
+          ></section>
         </div>
-        <div id="photosGrid" class="photos-grid"></div>
-        <p id="photosMessage" class="photos-message" role="status"></p>
-      </section>
 
-      <!-- Current weather for the selected country or city. -->
-      <section
-        id="weatherInfo"
-        class="info-panel weather-info"
-        aria-live="polite"
-        hidden
-      ></section>
+        <div class="places-column places-column-right">
+          <!-- Current weather for the selected country or city -->
+          <section
+            id="weatherInfo"
+            class="info-panel weather-info"
+            aria-live="polite"
+            hidden
+          ></section>
 
-      <!-- Country facts loaded from countries.dev, above the category chips. -->
-      <section
-        id="countryInfo"
-        class="info-panel country-info"
-        aria-live="polite"
-        hidden
-      ></section>
-
-      <!-- Suggested activities based on country and current weather. -->
-      <section
-        id="recommendationsInfo"
-        class="info-panel recommendations-info"
-        aria-live="polite"
-        hidden
-      ></section>
+          <!-- Suggested activities based on country and current weather -->
+          <section
+            id="recommendationsInfo"
+            class="info-panel recommendations-info"
+            aria-live="polite"
+            hidden
+          ></section>
+        </div>
+      </div>
 
       <!-- Currency converter using Frankfurter API for budget calculations. -->
       <section
@@ -132,7 +175,9 @@
             <label for="currencyFrom">From</label>
             <select id="currencyFrom"></select>
           </div>
-          <button type="button" id="currencySwapBtn" class="currency-swap-btn" title="Swap currencies" aria-label="Swap currencies">⇄</button>
+          <button type="button" id="currencySwapBtn" class="currency-swap-btn" title="Swap currencies" aria-label="Swap currencies">
+            <span class="material-symbols-sharp">swap_horiz</span>
+          </button>
           <div class="currency-field">
             <label for="currencyTo">To</label>
             <select id="currencyTo"></select>
@@ -153,14 +198,10 @@
       <p id="poiMessage" class="message" role="status"></p>
 
       <section id="poiResults" class="poi-grid" aria-live="polite"></section>
-
-      <div class="load-more-wrap">
-        <button type="button" id="loadMoreBtn" hidden>Load more places</button>
-      </div>
     </section>
 
     <!-- Dedicated "My Trips" View -->
-    <section id="tripsView" class="view" hidden>
+    <section id="tripsView" class="view trips-view" hidden>
       <header class="trips-header">
         <div class="trips-header-text">
           <h1>My Trips</h1>
@@ -171,7 +212,7 @@
 
       <!-- Empty State -->
       <div id="tripsEmptyState" class="empty-state" hidden>
-        <span class="empty-icon">🗺️</span>
+        <span class="material-symbols-sharp empty-icon">map</span>
         <h2>No saved trips yet</h2>
         <button type="button" id="emptyStateDiscoverBtn" class="primary-btn">Explore Destinations</button>
       </div>
@@ -185,7 +226,9 @@
       <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-header">
           <h2 id="modalTitle">Plan Your Trip</h2>
-          <button type="button" id="modalCloseBtn" class="modal-close" aria-label="Close dialog">✕</button>
+          <button type="button" id="modalCloseBtn" class="modal-close" aria-label="Close dialog">
+            <span class="material-symbols-sharp">close</span>
+          </button>
         </div>
         <form id="tripForm" class="trip-form">
           <input type="hidden" id="tripId" />
@@ -253,7 +296,9 @@
       <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
         <div class="modal-header">
           <h2 id="deleteModalTitle">Delete Trip</h2>
-          <button type="button" id="deleteModalCloseBtn" class="modal-close" aria-label="Close dialog">✕</button>
+          <button type="button" id="deleteModalCloseBtn" class="modal-close" aria-label="Close dialog">
+            <span class="material-symbols-sharp">close</span>
+          </button>
         </div>
         <div class="modal-body">
           <p>Are you sure you want to delete your trip to <strong id="deleteTripDestination"></strong>?</p>

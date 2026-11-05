@@ -8,7 +8,7 @@ class GeoapifyService {
     this.apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
     this.geocodingUrl = 'https://api.geoapify.com/v1/geocode/search';
     this.placesUrl = 'https://api.geoapify.com/v2/places';
-    this.defaultPageSize = 20;
+    this.defaultPageSize = 16;
   }
 
   hasApiKey() {

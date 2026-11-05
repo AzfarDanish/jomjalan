@@ -50,6 +50,21 @@ function createMainWindow() {
     },
   });
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'home.html'));
+
+  // Watch renderer directory and automatically reload window on file changes
+  const rendererDir = path.join(__dirname, 'renderer');
+  let reloadTimeout = null;
+  fs.watch(rendererDir, { recursive: true }, (eventType, filename) => {
+    if (reloadTimeout) {
+      clearTimeout(reloadTimeout);
+    }
+    // Debounce reloads to prevent multiple quick triggers on file save
+    reloadTimeout = setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.reloadIgnoringCache();
+      }
+    }, 150);
+  });
 }
 
 ipcMain.handle('get-geoapify-key', () => {
