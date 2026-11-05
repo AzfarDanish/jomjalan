@@ -49,7 +49,7 @@ function createMainWindow() {
       contextIsolation: false,
     },
   });
-  mainWindow.loadFile(path.join(__dirname, 'renderer', 'home.html'));
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'discover.html'));
 
   // Watch renderer directory and automatically reload window on file changes
   const rendererDir = path.join(__dirname, 'renderer');
@@ -68,21 +68,14 @@ function createMainWindow() {
 }
 
 ipcMain.handle('get-geoapify-key', () => {
-  return (
-    readEnvValue('geoapifyKey') ||
-    readEnvValue('GEOAPIFY_API_KEY') ||
-    process.env.GEOAPIFY_API_KEY ||
-    ''
-  );
+  return readEnvValue('geoapifyKey') || readEnvValue('GEOAPIFY_API_KEY');
 });
 
 ipcMain.handle('get-unsplash-key', () => {
   return (
     readEnvValue('unsplashKey') ||
     readEnvValue('UNSPLASH_ACCESS_KEY') ||
-    readEnvValue('Access Key') ||
-    process.env.UNSPLASH_ACCESS_KEY ||
-    ''
+    readEnvValue('Access Key')
   );
 });
 

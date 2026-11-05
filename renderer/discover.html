@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JomJalan — Discover</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png" />
+</head>
+<body>
+  <nav class="app-navbar">
+    <div class="nav-brand">
+      <span class="material-symbols-sharp nav-logo-icon">flight_takeoff</span>
+      <span class="nav-title">JomJalan</span>
+    </div>
+    <div class="nav-links">
+      <a href="discover.html" id="navDiscoverBtn" class="nav-link active">
+        <span class="material-symbols-sharp icon-sm">search</span>
+        <span>Discover</span>
+      </a>
+      <a href="trips.html" id="navTripsBtn" class="nav-link">
+        <span class="material-symbols-sharp icon-sm">luggage</span>
+        <span>My Trips</span>
+        <span id="tripsBadge" class="nav-badge" hidden></span>
+      </a>
+    </div>
+  </nav>
+
+  <main class="app home-app">
+    <section id="discoverView" class="view discover-view">
+      <!-- Hero section: 100% width, 50vh height with centered title and search bar -->
+      <div class="hero-banner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <header class="home-header">
+            <h1 class="hero-title">Discover Places</h1>
+          </header>
+
+          <!-- Search destinations -->
+          <form id="destinationForm" class="search-form hero-search-form">
+            <div class="search-input-wrap">
+              <input
+                type="text"
+                id="destinationInput"
+                placeholder="Search country or city (e.g. Japan, London, Tokyo)"
+                aria-label="Country or city"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                id="destinationClearBtn"
+                class="search-clear-btn"
+                aria-label="Clear search input"
+                title="Clear"
+                hidden
+              ><span class="material-symbols-sharp">close</span></button>
+            </div>
+            <button type="submit" id="destinationSearchBtn">Search</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Below the hero banner: popular destinations centered -->
+      <div class="popular-destinations-section">
+        <h2 class="popular-title">Popular Destinations</h2>
+        <div class="quick-destinations" aria-label="Popular destinations">
+          <button type="button" class="quick-chip" data-query="Tokyo">Tokyo</button>
+          <button type="button" class="quick-chip" data-query="Kuala Lumpur">Kuala Lumpur</button>
+          <button type="button" class="quick-chip" data-query="Paris">Paris</button>
+          <button type="button" class="quick-chip" data-query="London">London</button>
+          <button type="button" class="quick-chip" data-query="Seoul">Seoul</button>
+        </div>
+      </div>
+
+      <div class="discover-content">
+        <p id="destinationMessage" class="message" role="status"></p>
+
+        <section
+          id="destinationResults"
+          class="destination-results"
+          aria-live="polite"
+        ></section>
+      </div>
+    </section>
+  </main>
+
+  <script src="discover.js"></script>
+</body>
+</html>

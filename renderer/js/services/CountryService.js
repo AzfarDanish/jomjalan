@@ -1,23 +1,18 @@
 const Country = require('../models/Country');
 
-// This class is responsible only for talking to the countries.dev API.
-// The API is free and does not need a key.
+// CountryService communicates with the free countries.dev API.
 class CountryService {
   constructor() {
     this.baseUrl = 'https://countries.dev';
     this.fields = [
       'name',
       'alpha2Code',
-      'flag',
       'capital',
       'region',
       'subregion',
       'population',
-      'area',
       'currencies',
       'languages',
-      'callingCodes',
-      'timezones',
     ].join(',');
   }
 
@@ -38,6 +33,10 @@ class CountryService {
     return new Country(data);
   }
 
+  async getCountryByCode(countryCode) {
+    return this.getCountry(countryCode);
+  }
+
   async request(url) {
     let response;
 
@@ -54,9 +53,7 @@ class CountryService {
     }
 
     if (!response.ok) {
-      throw new Error(
-        `Country request failed (status ${response.status}).`
-      );
+      throw new Error(`Country request failed (status ${response.status}).`);
     }
 
     try {

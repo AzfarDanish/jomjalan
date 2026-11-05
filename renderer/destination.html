@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JomJalan — Discover</title>
+  <title>JomJalan — Destination</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png" />
@@ -14,15 +14,15 @@
       <span class="nav-title">JomJalan</span>
     </div>
     <div class="nav-links">
-      <button type="button" id="navDiscoverBtn" class="nav-link active">
+      <a href="discover.html" id="navDiscoverBtn" class="nav-link">
         <span class="material-symbols-sharp icon-sm">search</span>
         <span>Discover</span>
-      </button>
-      <button type="button" id="navTripsBtn" class="nav-link">
+      </a>
+      <a href="trips.html" id="navTripsBtn" class="nav-link">
         <span class="material-symbols-sharp icon-sm">luggage</span>
         <span>My Trips</span>
-        <span id="tripsBadge" hidden></span>
-      </button>
+        <span id="tripsBadge" class="nav-badge" hidden></span>
+      </a>
     </div>
   </nav>
 
@@ -30,73 +30,17 @@
     <!-- Notification banner for CRUD feedback -->
     <div id="appToast" class="app-toast" hidden role="alert" aria-live="polite"></div>
 
-    <section id="discoverView" class="view discover-view">
-      <!-- Hero section: 100% width, 50vh height with centered title and search bar -->
-      <div class="hero-banner">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <header class="home-header">
-            <h1 class="hero-title">Discover Places</h1>
-          </header>
-
-          <!-- Search destinations -->
-          <form id="destinationForm" class="search-form hero-search-form">
-            <div class="search-input-wrap">
-              <input
-                type="text"
-                id="destinationInput"
-                placeholder="Search country or city (e.g. Japan, London, Tokyo)"
-                aria-label="Country or city"
-                autocomplete="off"
-              />
-              <button
-                type="button"
-                id="destinationClearBtn"
-                class="search-clear-btn"
-                aria-label="Clear search input"
-                title="Clear"
-                hidden
-              ><span class="material-symbols-sharp">close</span></button>
-            </div>
-            <button type="submit" id="destinationSearchBtn">Search</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Below the hero banner: popular destinations centered -->
-      <div class="popular-destinations-section">
-        <h2 class="popular-title">Popular Destinations</h2>
-        <div class="quick-destinations" aria-label="Popular destinations">
-          <button type="button" class="quick-chip" data-query="Tokyo">Tokyo</button>
-          <button type="button" class="quick-chip" data-query="Kuala Lumpur">Kuala Lumpur</button>
-          <button type="button" class="quick-chip" data-query="Paris">Paris</button>
-          <button type="button" class="quick-chip" data-query="London">London</button>
-          <button type="button" class="quick-chip" data-query="Seoul">Seoul</button>
-        </div>
-      </div>
-
-      <div class="discover-content">
-        <p id="destinationMessage" class="message" role="status"></p>
-
-        <section
-          id="destinationResults"
-          class="destination-results"
-          aria-live="polite"
-        ></section>
-      </div>
-    </section>
-
-    <section id="destinationView" class="view destination-view" hidden>
+    <section id="destinationView" class="view destination-view">
       <div class="destination-top-bar">
-        <button type="button" id="backBtn" class="back-button">
+        <a href="discover.html" id="backBtn" class="back-button">
           <span class="material-symbols-sharp icon-sm">arrow_back</span>
           <span>Back</span>
-        </button>
+        </a>
       </div>
 
       <div class="destination-header-row">
         <header class="destination-header">
-          <p id="destinationType" class="eyebrow" hidden></p>
+          <p id="destinationType" class="eyebrow"></p>
           <h1 id="destinationTitle"></h1>
           <p id="destinationSubtitle" class="tagline"></p>
         </header>
@@ -117,7 +61,6 @@
           <!-- Country/city background image banner (stays within left half of page) -->
           <div id="destinationCover" class="destination-cover-banner" hidden>
             <div class="destination-cover-overlay"></div>
-            <div id="destinationCoverCredit" class="destination-cover-credit"></div>
           </div>
 
           <!-- Country facts loaded from countries.dev, positioned directly below the background image -->
@@ -173,14 +116,16 @@
           </div>
           <div class="currency-field">
             <label for="currencyFrom">From</label>
+            <div id="currencyFromStatic" class="currency-static-badge" hidden></div>
             <select id="currencyFrom"></select>
           </div>
-          <button type="button" id="currencySwapBtn" class="currency-swap-btn" title="Swap currencies" aria-label="Swap currencies">
+          <button type="button" id="currencySwapBtn" class="currency-swap-btn" title="Swap direction" aria-label="Swap direction">
             <span class="material-symbols-sharp">swap_horiz</span>
           </button>
           <div class="currency-field">
             <label for="currencyTo">To</label>
-            <select id="currencyTo"></select>
+            <div id="currencyToStatic" class="currency-static-badge" hidden></div>
+            <select id="currencyTo" hidden></select>
           </div>
           <button type="submit" id="currencyConvertBtn">Convert</button>
         </form>
@@ -188,44 +133,16 @@
         <p id="currencyMessage" class="currency-message" role="status"></p>
       </section>
 
-      <div
-        id="categoryFilters"
-        class="filter-chips"
-        role="group"
-        aria-label="Filter places by category"
-      ></div>
-
       <p id="poiMessage" class="message" role="status"></p>
 
       <section id="poiResults" class="poi-grid" aria-live="polite"></section>
     </section>
 
-    <!-- Dedicated "My Trips" View -->
-    <section id="tripsView" class="view trips-view" hidden>
-      <header class="trips-header">
-        <div class="trips-header-text">
-          <h1>My Trips</h1>
-        </div>
-      </header>
-
-      <p id="tripsMessage" class="message" role="status"></p>
-
-      <!-- Empty State -->
-      <div id="tripsEmptyState" class="empty-state" hidden>
-        <span class="material-symbols-sharp empty-icon">map</span>
-        <h2>No saved trips yet</h2>
-        <button type="button" id="emptyStateDiscoverBtn" class="primary-btn">Explore Destinations</button>
-      </div>
-
-      <!-- Trips List Grid -->
-      <section id="tripsGrid" class="trips-grid" aria-live="polite"></section>
-    </section>
-
-    <!-- Trip Modal (Used for Create & Edit) -->
+    <!-- Trip Modal (Used for Create Plan) -->
     <div id="tripModal" class="modal-backdrop" hidden>
       <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-header">
-          <h2 id="modalTitle">Plan Your Trip</h2>
+          <h2 id="modalTitle">Save as Trip Plan</h2>
           <button type="button" id="modalCloseBtn" class="modal-close" aria-label="Close dialog">
             <span class="material-symbols-sharp">close</span>
           </button>
@@ -290,28 +207,8 @@
         </form>
       </div>
     </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal-backdrop" hidden>
-      <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-        <div class="modal-header">
-          <h2 id="deleteModalTitle">Delete Trip</h2>
-          <button type="button" id="deleteModalCloseBtn" class="modal-close" aria-label="Close dialog">
-            <span class="material-symbols-sharp">close</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete your trip to <strong id="deleteTripDestination"></strong>?</p>
-          <p class="text-muted">This action cannot be undone.</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" id="deleteCancelBtn" class="button-secondary">Cancel</button>
-          <button type="button" id="deleteConfirmBtn" class="button-danger">Delete</button>
-        </div>
-      </div>
-    </div>
   </main>
 
-  <script src="home.js"></script>
+  <script src="destination.js"></script>
 </body>
 </html>

@@ -30,8 +30,7 @@ const WEATHER_DESCRIPTIONS = {
   99: 'Thunderstorm with heavy hail',
 };
 
-// A Weather object holds the current weather for one place.
-// The UI does not need to know what the WMO codes mean (abstraction).
+// Weather encapsulates the current weather conditions for one destination.
 class Weather {
   constructor(data) {
     const current = data ? data.current : null;
@@ -51,70 +50,45 @@ class Weather {
         : null;
     this.precipitation =
       typeof current.precipitation === 'number' ? current.precipitation : null;
-    this.cloudCover =
-      typeof current.cloud_cover === 'number' ? current.cloud_cover : null;
     this.windSpeed =
       typeof current.wind_speed_10m === 'number' ? current.wind_speed_10m : null;
     this.windDirection =
       typeof current.wind_direction_10m === 'number'
         ? current.wind_direction_10m
         : null;
-    this.windGusts =
-      typeof current.wind_gusts_10m === 'number' ? current.wind_gusts_10m : null;
     this.weatherCode = current.weather_code;
-
-    // The daily values are optional, so the weather page still works
-    // when the API returns only the current conditions.
-    const daily = data.daily || {};
-    this.highTemperature = this.readDailyValue(daily.temperature_2m_max);
-    this.lowTemperature = this.readDailyValue(daily.temperature_2m_min);
-  }
-
-  readDailyValue(values) {
-    if (!Array.isArray(values) || typeof values[0] !== 'number') {
-      return null;
-    }
-
-    return values[0];
   }
 
   getDescription() {
     return WEATHER_DESCRIPTIONS[this.weatherCode] || 'Unknown conditions';
   }
 
-  getTemperatureLabel() {
-    return this.formatTemperature(this.temperature);
+  getWeatherDescription() {
+    return this.getDescription();
   }
 
-  getFeelsLikeLabel() {
-    return this.formatTemperature(this.apparentTemperature);
+  getTemperatureLabel() {
+    if (typeof this.temperature !== 'number') {
+      return '';
+    }
+    return `${Math.round(this.temperature)}°C`;
+  }
+
+  getFormattedTemp() {
+    return this.getTemperatureLabel();
   }
 
   getHumidityLabel() {
     if (typeof this.humidity !== 'number') {
       return '';
     }
-
     return `${Math.round(this.humidity)}%`;
   }
 
-  getPrecipitationLabel() {
-    if (typeof this.precipitation !== 'number') {
-      return '';
-    }
-
-    return `${Math.round(this.precipitation * 10) / 10} mm`;
+  getFormattedHumidity() {
+    return this.getHumidityLabel();
   }
 
-  getCloudCoverLabel() {
-    if (typeof this.cloudCover !== 'number') {
-      return '';
-    }
-
-    return `${Math.round(this.cloudCover)}%`;
-  }
-
-  // Wind comes from the compass direction, e.g. "12 km/h from NE".
   getWindLabel() {
     if (typeof this.windSpeed !== 'number') {
       return '';
@@ -126,6 +100,10 @@ class Weather {
     return direction ? `${speed} from ${direction}` : speed;
   }
 
+  getFormattedWind() {
+    return this.getWindLabel();
+  }
+
   getWindDirectionLabel() {
     if (typeof this.windDirection !== 'number') {
       return '';
@@ -135,42 +113,6 @@ class Weather {
     const index = Math.round(this.windDirection / 45) % 8;
 
     return directions[index];
-  }
-
-  getWindGustLabel() {
-    if (typeof this.windGusts !== 'number') {
-      return '';
-    }
-
-    return `${Math.round(this.windGusts)} km/h`;
-  }
-
-  getTemperatureRangeLabel() {
-    const high = this.formatTemperature(this.highTemperature);
-    const low = this.formatTemperature(this.lowTemperature);
-
-    if (high && low) {
-      return `High ${high} · Low ${low}`;
-    }
-
-    if (high) {
-      return `High ${high}`;
-    }
-
-    if (low) {
-      return `Low ${low}`;
-    }
-
-    return '';
-  }
-
-  // Small helper so missing temperatures show nothing instead of "NaN".
-  formatTemperature(value) {
-    if (typeof value !== 'number') {
-      return '';
-    }
-
-    return `${Math.round(value)}°C`;
   }
 }
 

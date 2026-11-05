@@ -1,14 +1,9 @@
 // Photo models an image returned from the Unsplash API.
-// It stores image URLs and attribution info per Unsplash API guidelines.
-
 class Photo {
   constructor(data) {
     if (!data || !data.urls) {
       throw new Error('Photo data is incomplete.');
     }
-
-    this.id = data.id || '';
-    this.description = data.description || data.alt_description || 'Destination photography';
 
     this.urls = {
       regular: data.urls.regular || '',
@@ -24,11 +19,13 @@ class Photo {
 
     this.links = {
       html: (data.links && data.links.html) ? data.links.html : 'https://unsplash.com',
-      downloadLocation: (data.links && data.links.download_location) ? data.links.download_location : '',
     };
   }
 
-  // Returns UTM-tagged photographer link per Unsplash attribution requirements
+  get regularUrl() {
+    return this.urls.regular;
+  }
+
   getPhotographerAttributionUrl(appName = 'jomjalan') {
     const url = new URL(this.photographer.portfolioUrl);
     url.searchParams.set('utm_source', appName);
@@ -36,12 +33,17 @@ class Photo {
     return url.toString();
   }
 
-  // Returns UTM-tagged Unsplash referral link per Unsplash guidelines
   getUnsplashReferralUrl(appName = 'jomjalan') {
     const url = new URL(this.links.html);
     url.searchParams.set('utm_source', appName);
     url.searchParams.set('utm_medium', 'referral');
     return url.toString();
+  }
+
+  getCreditHtml(appName = 'jomjalan') {
+    const photoUrl = this.getUnsplashReferralUrl(appName);
+    const userUrl = this.getPhotographerAttributionUrl(appName);
+    return `Photo by <a href="${userUrl}" target="_blank" rel="noopener">${this.photographer.name}</a> on <a href="${photoUrl}" target="_blank" rel="noopener">Unsplash</a>`;
   }
 }
 

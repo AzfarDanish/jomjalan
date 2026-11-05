@@ -1,4 +1,4 @@
-// Friendly names for the Geoapify place categories used by the home page.
+// Friendly names for the Geoapify place categories used by the app.
 const CATEGORY_LABELS = {
   'tourism.attraction': 'Attraction',
   'tourism.attraction.artwork': 'Public art',
@@ -75,8 +75,6 @@ const CATEGORY_LABELS = {
   'activity.events_venue': 'Events venue',
 };
 
-// Categories such as "wheelchair.yes" or "no_fee.no" describe a place but are
-// not useful as the main category label.
 const CONDITION_PREFIXES = [
   'no_fee',
   'wheelchair',
@@ -90,12 +88,8 @@ const CONDITION_PREFIXES = [
   'cuisine',
 ];
 
-// A Poi is one feature from the Geoapify Places API.
-// It extends Location (inheriting name, latitude, longitude) and adds POI-specific data.
-const Destination = require('./Destination');
-const Location = Destination.Location;
-
-class Poi extends Location {
+// Poi is one place of interest from Geoapify Places API.
+class Poi {
   constructor(feature) {
     const data = feature && feature.properties ? feature.properties : feature;
 
@@ -103,14 +97,16 @@ class Poi extends Location {
       throw new Error('Place data is incomplete.');
     }
 
-    const poiName = data.name || data.address_line1 || 'Unnamed place';
-    super(poiName, data.lat, data.lon);
-
+    this.name = data.name || data.address_line1 || 'Unnamed place';
+    this.latitude = data.lat;
+    this.longitude = data.lon;
     this.address = data.formatted || data.address_line1 || '';
-    this.placeId = data.place_id || '';
-    this.distance = typeof data.distance === 'number' ? data.distance : null;
     this.categories = Array.isArray(data.categories) ? data.categories : [];
     this.categoryLabel = this.resolveCategoryLabel();
+  }
+
+  getPrimaryCategory() {
+    return this.categoryLabel;
   }
 
   resolveCategoryLabel() {
@@ -122,38 +118,22 @@ class Poi extends Location {
         )
     );
 
-    // Geoapify lists categories from general to specific, so read backwards.
     for (let index = usefulCategories.length - 1; index >= 0; index -= 1) {
       const label = CATEGORY_LABELS[usefulCategories[index]];
-
       if (label) {
         return label;
       }
     }
 
     const fallback = usefulCategories[usefulCategories.length - 1];
-
     if (!fallback) {
       return 'Place';
     }
 
     const lastPart = fallback.split('.').pop();
-
     return lastPart
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (character) => character.toUpperCase());
-  }
-
-  getDistanceLabel() {
-    if (typeof this.distance !== 'number') {
-      return '';
-    }
-
-    if (this.distance < 1000) {
-      return `${Math.round(this.distance)} m away`;
-    }
-
-    return `${(this.distance / 1000).toFixed(1)} km away`;
   }
 }
 

@@ -1,7 +1,4 @@
 // CurrencyConversion models a currency conversion calculation result.
-// It stores the input amount, the currencies, the exchange rate,
-// and provides helper methods to format the calculated result with proper units.
-
 class CurrencyConversion {
   constructor({ baseCurrency, targetCurrency, amount, rate, date }) {
     if (!baseCurrency || !targetCurrency) {
@@ -24,7 +21,19 @@ class CurrencyConversion {
     this.date = date || new Date().toISOString().slice(0, 10);
   }
 
-  // Format the converted result with clear currency code and appropriate decimals.
+  get from() {
+    return this.baseCurrency;
+  }
+
+  get to() {
+    return this.targetCurrency;
+  }
+
+  get result() {
+    return this.convertedAmount;
+  }
+
+  // Format the converted result with currency code
   getFormattedConvertedAmount() {
     return `${this.convertedAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
@@ -32,7 +41,7 @@ class CurrencyConversion {
     })} ${this.targetCurrency}`;
   }
 
-  // Format the original amount with base currency code.
+  // Format the original amount with base currency code
   getFormattedOriginalAmount() {
     return `${this.amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
@@ -40,22 +49,9 @@ class CurrencyConversion {
     })} ${this.baseCurrency}`;
   }
 
-  // Clear label for the forward rate (e.g., 1 USD = 4.0640 MYR).
   getExchangeRateLabel() {
     const rateStr = this.rate >= 1 ? this.rate.toFixed(4) : this.rate.toPrecision(4);
     return `1 ${this.baseCurrency} = ${rateStr} ${this.targetCurrency}`;
-  }
-
-  // Clear label for the inverse exchange rate (e.g., 1 MYR = 0.2461 USD).
-  getInverseRateLabel() {
-    const inverse = 1 / this.rate;
-    const invStr = inverse >= 1 ? inverse.toFixed(4) : inverse.toPrecision(4);
-    return `1 ${this.targetCurrency} = ${invStr} ${this.baseCurrency}`;
-  }
-
-  // Date of the rate record.
-  getDateLabel() {
-    return this.date;
   }
 }
 

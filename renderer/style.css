@@ -1,6 +1,10 @@
 /* Plain shared styles for JomJalan */
 
 /* Material Symbols Sharp Base */
+[hidden] {
+  display: none !important;
+}
+
 .material-symbols-sharp {
   font-family: 'Material Symbols Sharp';
   font-weight: normal;
@@ -155,14 +159,6 @@ button:disabled {
   justify-content: center;
   gap: 8px;
   margin-top: 14px;
-}
-
-.quick-label {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
 }
 
 .quick-chip {
@@ -464,6 +460,7 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  text-decoration: none;
 }
 
 .back-button:hover {
@@ -496,167 +493,123 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
-.info-summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+/* Country facts grid */
+.country-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px 16px;
+  margin-top: 12px;
 }
 
-.info-flag-icon {
-  font-size: 20px;
+.fact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fact-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fact-val {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Weather panel */
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.weather-temp {
+  font-size: 36px;
+  font-weight: 800;
   color: var(--primary);
   line-height: 1;
 }
 
-.info-name {
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.info-facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px 16px;
-  margin: 0;
-}
-
-.info-fact dt {
-  margin: 0;
-  color: #777777;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.info-fact dd {
-  margin: 2px 0 0;
-  color: #333333;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.info-message {
-  margin: 0;
-  color: #777777;
-  font-size: 13px;
-}
-
-/* Weather panel: the current temperature is the main detail. */
-.weather-current {
+.weather-details {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.weather-temperature {
-  font-size: 28px;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.weather-description {
-  color: #555555;
+.weather-desc {
+  margin: 0;
   font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
-/* Recommendations panel */
-.recommendations-heading {
-  margin: 0 0 12px;
-  font-size: 16px;
-  font-weight: bold;
+.weather-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 12px;
 }
 
-.recommendations-list {
+/* Suggested Activities */
+.activities-grid {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 12px;
 }
 
-.recommendation-item {
-  padding: 12px;
+.activity-card {
+  padding: 12px 14px;
   background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  text-align: left;
-}
-
-.recommendation-badge {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.badge-indoor {
-  background-color: #e8f0fe;
-  color: #1a73e8;
-}
-
-.badge-outdoor {
-  background-color: #e6f4ea;
-  color: #137333;
-}
-
-.badge-general {
-  background-color: #f1f3f4;
-  color: #5f6368;
-}
-
-.recommendation-title {
-  margin: 0 0 4px;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.recommendation-desc {
-  margin: 0;
-  font-size: 13px;
-  color: #555555;
-  line-height: 1.4;
-}
-
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 24px;
-  text-align: left;
-}
-
-/* Chips are buttons too, so they need their own light styling. */
-.chip {
-  padding: 8px 16px;
   border: 1px solid var(--border-light);
-  border-radius: 999px;
-  background-color: #ffffff;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.15s ease;
+  border-radius: var(--radius-sm);
+  text-align: left;
 }
 
-.chip:hover {
-  background-color: var(--primary-light);
-  border-color: var(--primary-border);
+.activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.activity-category-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--primary);
-  box-shadow: none;
+  background-color: var(--primary-light);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
-.chip.active,
-.chip[aria-pressed="true"] {
-  border-color: var(--primary);
-  background-color: var(--primary);
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
+.activity-best-time {
+  font-size: 11px;
+  color: var(--text-subtle);
+  font-style: italic;
+}
+
+.activity-title {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.activity-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .poi-grid {
@@ -701,28 +654,34 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
-.poi-card h2 {
+.poi-header {
+  margin-bottom: 2px;
+}
+
+.poi-category-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background-color: var(--primary-light);
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.poi-name {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
   line-height: 1.3;
 }
 
 .poi-address {
   margin: 0;
-  color: #555555;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.poi-distance {
-  margin: 0;
-  color: #777777;
+  color: var(--text-muted);
   font-size: 13px;
-}
-
-.load-more-wrap {
-  margin-top: 16px;
-  text-align: center;
+  line-height: 1.4;
 }
 
 /* ============================================
@@ -851,11 +810,6 @@ button:disabled {
   color: var(--text-muted);
 }
 
-.photos-loading {
-  font-style: italic;
-  color: var(--primary);
-}
-
 /* ============================================
    Currency Converter Panel
    ============================================ */
@@ -906,7 +860,8 @@ button:disabled {
 }
 
 .currency-field input,
-.currency-field select {
+.currency-field select,
+.currency-static-badge {
   padding: 8px 10px;
   font-size: 14px;
   border: 1px solid #cbd5e1;
@@ -915,6 +870,16 @@ button:disabled {
   color: #1e293b;
   min-height: 38px;
   box-sizing: border-box;
+}
+
+.currency-static-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--primary);
+  background-color: var(--primary-light);
+  border-color: var(--primary-border);
+  min-width: 130px;
 }
 
 .currency-field input[type="number"] {
@@ -956,58 +921,40 @@ button:disabled {
 
 .currency-result {
   margin-top: 14px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-}
-
-.currency-primary-result {
-  margin-bottom: 8px;
-}
-
-.currency-source-amount {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.currency-target-amount {
-  font-size: 24px;
-  font-weight: bold;
-  color: #0f172a;
-  line-height: 1.2;
-  margin-top: 2px;
-}
-
-.currency-rate-details {
+  border-radius: 8px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  padding-top: 8px;
-  border-top: 1px solid #f1f5f9;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.currency-result strong {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.currency-result span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.currency-result .rate-sub {
+  margin-top: 4px;
   font-size: 12px;
-  color: #64748b;
-}
-
-.currency-rate-item {
-  font-weight: 500;
-  color: #334155;
-}
-
-.currency-rate-date {
-  color: #94a3b8;
+  color: var(--text-subtle);
+  border-top: 1px dashed var(--border-light);
+  padding-top: 6px;
 }
 
 .currency-message {
   margin: 8px 0 0;
   font-size: 13px;
   min-height: 18px;
-}
-
-.info-note {
-  color: #64748b;
-  font-style: italic;
 }
 
 /* ============================================
@@ -1053,6 +1000,7 @@ button:disabled {
   color: #4a5568;
   font-size: 14px;
   font-weight: 600;
+  text-decoration: none;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
@@ -1148,7 +1096,21 @@ button:disabled {
 
 .trips-header {
   text-align: left;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.trips-header-text h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.trips-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 .empty-state {
@@ -1156,7 +1118,7 @@ button:disabled {
   text-align: center;
   background-color: #f8fafc;
   border: 2px dashed #cbd5e1;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-top: 24px;
 }
 
@@ -1169,16 +1131,17 @@ button:disabled {
 
 .empty-state h2 {
   font-size: 20px;
+  font-weight: 600;
   margin: 0 0 8px;
-  color: #334155;
+  color: #1e293b;
 }
 
 .empty-state p {
   color: #64748b;
-  margin: 0 0 20px;
+  margin: 0 auto 20px;
   max-width: 440px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .trips-grid {
@@ -1193,63 +1156,82 @@ button:disabled {
 .trip-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 18px;
+  border-radius: 12px;
+  padding: 18px 20px;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .trip-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 16px -2px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
+  border-color: #cbd5e1;
 }
 
 .trip-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
+}
+
+.trip-card-heading {
+  flex: 1;
+  min-width: 0;
 }
 
 .trip-card-type {
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #718096;
+  letter-spacing: 0.05em;
+  color: #64748b;
   font-weight: 600;
   display: block;
 }
 
 .trip-card-title {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-size: 18px;
-  color: #1a202c;
+  font-weight: 700;
+  color: #0f172a;
   line-height: 1.3;
+  word-break: break-word;
 }
 
 .trip-country-tag {
-  background-color: #edf2f7;
-  color: #4a5568;
+  background-color: #f1f5f9;
+  color: #334155;
   font-size: 12px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
   white-space: nowrap;
+  border: 1px solid #e2e8f0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.trip-country-tag .tag-icon {
+  font-size: 14px;
+  color: #64748b;
 }
 
 .trip-meta-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 12px;
+  gap: 10px 14px;
   background-color: #f8fafc;
-  padding: 10px 12px;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
 }
 
 .trip-meta-item {
@@ -1262,19 +1244,21 @@ button:disabled {
   font-size: 11px;
   color: #64748b;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .meta-icon {
-  font-size: 13px;
+  font-size: 14px;
   color: #94a3b8;
 }
 
 .meta-val {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
   color: #1e293b;
 }
 
@@ -1284,32 +1268,67 @@ button:disabled {
 }
 
 .trip-daily-budget {
-  margin: 0;
-  font-size: 12px;
-  color: #4a5568;
-  font-style: italic;
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  font-style: normal;
 }
 
 .trip-notes {
-  font-size: 13px;
-  color: #475569;
   background-color: #fffbeb;
+  border: 1px solid #fef3c7;
   border-left: 3px solid #f59e0b;
-  padding: 6px 10px;
-  border-radius: 0 4px 4px 0;
-  line-height: 1.4;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.trip-notes-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #b45309;
+  margin-bottom: 4px;
+}
+
+.trip-notes-title .note-icon {
+  font-size: 14px;
+}
+
+.trip-notes-content {
+  font-size: 12.5px;
+  color: #451a03;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .trip-recs-section {
   border-top: 1px dashed #e2e8f0;
-  padding-top: 8px;
+  padding-top: 10px;
 }
 
-.trip-recs-section h4 {
-  margin: 0 0 6px;
+.trip-recs-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.trip-recs-header h4 {
+  margin: 0;
   font-size: 12px;
-  color: #475569;
   font-weight: 600;
+  color: #475569;
+}
+
+.trip-recs-header .rec-icon {
+  font-size: 14px;
+  color: #64748b;
 }
 
 .trip-recs-list {
@@ -1317,49 +1336,74 @@ button:disabled {
   padding-left: 18px;
   font-size: 12px;
   color: #64748b;
+  line-height: 1.45;
 }
 
 .trip-recs-list li {
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+}
+
+.trip-recs-list li:last-child {
+  margin-bottom: 0;
 }
 
 .trip-recs-list strong {
-  color: #334155;
+  color: #1e293b;
+  font-weight: 600;
 }
 
 .trip-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-top: auto;
-  padding-top: 8px;
+  padding-top: 12px;
   border-top: 1px solid #f1f5f9;
 }
 
 .button-edit {
   flex: 1;
-  background-color: #f1f5f9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background-color: #f8fafc;
   border: 1px solid #cbd5e1;
   color: #334155;
   font-size: 13px;
-  padding: 6px 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .button-edit:hover {
   background-color: #e2e8f0;
   color: #0f172a;
+  border-color: #94a3b8;
 }
 
 .button-delete {
-  background-color: #fee2e2;
-  border: 1px solid #fca5a5;
-  color: #991b1b;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
   font-size: 13px;
-  padding: 6px 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .button-delete:hover {
-  background-color: #fecaca;
-  color: #7f1d1d;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-color: #f87171;
 }
 
 /* ============================================
@@ -1575,7 +1619,8 @@ button:disabled {
   }
 
   .destination-results,
-  .poi-grid {
+  .poi-grid,
+  .trips-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,25 +1,13 @@
-// Base class representing any geographic location with coordinates and names.
-class Location {
-  constructor(name, latitude, longitude) {
-    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      throw new Error('Valid coordinates (latitude and longitude) are required.');
-    }
-    this.name = name || 'Unknown location';
-    this.latitude = latitude;
-    this.longitude = longitude;
-  }
-}
-
 // A Destination is one country or city result from the Geoapify geocoding API.
-// It inherits base location properties (name, latitude, longitude) and adds geocoding facts.
-class Destination extends Location {
+class Destination {
   constructor(data) {
     if (!data || typeof data.lat !== 'number' || typeof data.lon !== 'number') {
       throw new Error('Destination data is incomplete.');
     }
 
-    const placeName = data.name || data.city || data.country || 'Unknown place';
-    super(placeName, data.lat, data.lon);
+    this.name = data.name || data.city || data.country || 'Unknown place';
+    this.latitude = data.lat;
+    this.longitude = data.lon;
 
     this.country = data.country || '';
     this.countryCode = (data.country_code || '').toLowerCase();
@@ -62,5 +50,4 @@ class Destination extends Location {
   }
 }
 
-Destination.Location = Location;
 module.exports = Destination;

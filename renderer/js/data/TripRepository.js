@@ -48,8 +48,7 @@ class TripRepository {
 
   // Save all trips to storage
   _saveAll(trips) {
-    const serialized = JSON.stringify(trips.map((t) => (t instanceof Trip ? t.toJSON() : t)));
-    localStorage.setItem(this.storageKey, serialized);
+    localStorage.setItem(this.storageKey, JSON.stringify(trips));
   }
 
   // Create and persist a new trip

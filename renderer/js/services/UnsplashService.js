@@ -2,7 +2,6 @@ const Photo = require('../models/Photo');
 
 // UnsplashService communicates with the official Unsplash API (https://api.unsplash.com/).
 // It searches high-quality destination photography and caches results to optimize performance.
-
 class UnsplashService {
   constructor(accessKey = '') {
     this.accessKey = typeof accessKey === 'string' ? accessKey.trim() : '';
@@ -30,7 +29,6 @@ class UnsplashService {
       return this.cache.get(cacheKey);
     }
 
-    // Build URL with travel keywords and orientation for clean visual display
     const url = new URL(`${this.baseUrl}/search/photos`);
     url.searchParams.set('query', `${cleanQuery} travel destination`);
     url.searchParams.set('per_page', String(perPage));
@@ -66,26 +64,8 @@ class UnsplashService {
     const results = Array.isArray(data.results) ? data.results : [];
     const photos = results.map((item) => new Photo(item));
 
-    // Cache the result
     this.cache.set(cacheKey, photos);
     return photos;
-  }
-
-  // Report download event according to Unsplash API terms
-  async triggerDownload(downloadLocation) {
-    if (!this.hasAccessKey() || !downloadLocation) {
-      return;
-    }
-
-    try {
-      await fetch(downloadLocation, {
-        headers: {
-          Authorization: `Client-ID ${this.accessKey}`,
-        },
-      });
-    } catch (e) {
-      // Background tracking failure should not disrupt user experience
-    }
   }
 }
 

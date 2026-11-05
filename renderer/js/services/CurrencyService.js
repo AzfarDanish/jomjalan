@@ -1,14 +1,13 @@
 const CurrencyConversion = require('../models/CurrencyConversion');
 
 // CurrencyService manages communication with the Frankfurter API (https://api.frankfurter.dev/).
-// It provides supported currencies and calculates live exchange rates.
 class CurrencyService {
   constructor() {
     this.baseUrl = 'https://api.frankfurter.dev/v1';
     this.cachedCurrencies = null;
   }
 
-  // Fetch the dictionary of supported currencies: { [code]: [name] }
+  // Fetch the dictionary of supported currencies
   async getCurrencies() {
     if (this.cachedCurrencies) {
       return this.cachedCurrencies;
@@ -19,12 +18,27 @@ class CurrencyService {
     return data;
   }
 
-  // Convert an amount from one currency to another using the Frankfurter API.
-  async convert(fromCurrency, toCurrency, amount) {
-    const from = typeof fromCurrency === 'string' ? fromCurrency.trim().toUpperCase() : '';
-    const to = typeof toCurrency === 'string' ? toCurrency.trim().toUpperCase() : '';
+  async getSupportedCurrencies() {
+    return this.getCurrencies();
+  }
 
-    if (!from || !to) {
+  // Convert an amount between currencies
+  async convert(arg1, arg2, arg3) {
+    let from, to, amount;
+    if (typeof arg1 === 'number') {
+      amount = arg1;
+      from = arg2;
+      to = arg3;
+    } else {
+      from = arg1;
+      to = arg2;
+      amount = arg3;
+    }
+
+    const fromCode = typeof from === 'string' ? from.trim().toUpperCase() : '';
+    const toCode = typeof to === 'string' ? to.trim().toUpperCase() : '';
+
+    if (!fromCode || !toCode) {
       throw new Error('Please select both a source and a destination currency.');
     }
 
@@ -33,30 +47,28 @@ class CurrencyService {
       throw new Error('Please enter a valid amount greater than zero.');
     }
 
-    // Boundary case: When both currencies are the same, the rate is exactly 1.
-    // Frankfurter returns HTTP 400 for identical currency pairs, so we handle it gracefully here.
-    if (from === to) {
+    if (fromCode === toCode) {
       return new CurrencyConversion({
-        baseCurrency: from,
-        targetCurrency: to,
+        baseCurrency: fromCode,
+        targetCurrency: toCode,
         amount: numericAmount,
         rate: 1.0,
         date: new Date().toISOString().slice(0, 10),
       });
     }
 
-    const url = `${this.baseUrl}/latest?base=${encodeURIComponent(from)}&symbols=${encodeURIComponent(to)}`;
+    const url = `${this.baseUrl}/latest?base=${encodeURIComponent(fromCode)}&symbols=${encodeURIComponent(toCode)}`;
     const result = await this.request(url);
 
-    if (!result || !result.rates || typeof result.rates[to] !== 'number') {
-      throw new Error(`Exchange rate for ${from} to ${to} is currently unavailable.`);
+    if (!result || !result.rates || typeof result.rates[toCode] !== 'number') {
+      throw new Error(`Exchange rate for ${fromCode} to ${toCode} is currently unavailable.`);
     }
 
     return new CurrencyConversion({
-      baseCurrency: from,
-      targetCurrency: to,
+      baseCurrency: fromCode,
+      targetCurrency: toCode,
       amount: numericAmount,
-      rate: result.rates[to],
+      rate: result.rates[toCode],
       date: result.date,
     });
   }

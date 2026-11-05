@@ -1,8 +1,7 @@
 const Destination = require('../models/Destination');
 const Poi = require('../models/Poi');
 
-// This class is responsible only for talking to the Geoapify APIs.
-// It returns Destination and Poi objects instead of raw API responses.
+// GeoapifyService manages geocoding and places search via Geoapify API.
 class GeoapifyService {
   constructor(apiKey) {
     this.apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -15,14 +14,16 @@ class GeoapifyService {
     return this.apiKey.length > 0;
   }
 
-  // Search for matching countries and cities at the same time.
-  // Geoapify does not accept "type=city,country" in one request, so two
-  // requests are sent and the results are merged.
+  // Alias for searchDestinations
+  async autocompletePlaces(query) {
+    return this.searchDestinations(query);
+  }
+
+  // Search for matching countries and cities simultaneously
   async searchDestinations(query) {
     this.requireApiKey();
 
     const searchText = typeof query === 'string' ? query.trim() : '';
-
     if (searchText === '') {
       throw new Error('A country or city name is required.');
     }
@@ -91,11 +92,27 @@ class GeoapifyService {
       .map((item) => new Destination(item));
   }
 
-  // Find places matching the selected categories inside a country or city.
+  // Convenience helper that accepts either a Destination instance or lat/lon coordinates
+  async getPlaces(destOrLat, lonOrCategories, categories, limit = 8) {
+    if (destOrLat instanceof Destination || (typeof destOrLat === 'object' && destOrLat !== null)) {
+      const cats = Array.isArray(lonOrCategories) ? lonOrCategories : categories;
+      const res = await this.searchPlaces(destOrLat, cats, { limit: categories && typeof categories === 'number' ? categories : limit });
+      return res.pois;
+    }
+
+    const tempDest = {
+      latitude: destOrLat,
+      longitude: lonOrCategories,
+    };
+    const res = await this.searchPlaces(tempDest, categories, { limit });
+    return res.pois;
+  }
+
+  // Find places matching categories
   async searchPlaces(destination, categories, options = {}) {
     this.requireApiKey();
 
-    if (!(destination instanceof Destination)) {
+    if (!destination) {
       throw new Error('A country or city is required.');
     }
 
@@ -111,20 +128,16 @@ class GeoapifyService {
       Number.isInteger(options.limit) && options.limit > 0
         ? options.limit
         : this.defaultPageSize;
-    const offset =
-      Number.isInteger(options.offset) && options.offset >= 0
-        ? options.offset
-        : 0;
+
+    const lat = destination.latitude !== undefined ? destination.latitude : destination.lat;
+    const lon = destination.longitude !== undefined ? destination.longitude : destination.lon;
 
     const url = new URL(this.placesUrl);
     url.searchParams.set('categories', categoriesList.join(','));
     url.searchParams.set('filter', this.buildAreaFilter(destination));
-    url.searchParams.set(
-      'bias',
-      `proximity:${destination.longitude},${destination.latitude}`
-    );
+    url.searchParams.set('bias', `proximity:${lon},${lat}`);
     url.searchParams.set('limit', String(limit));
-    url.searchParams.set('offset', String(offset));
+    url.searchParams.set('offset', '0');
     url.searchParams.set('lang', 'en');
     url.searchParams.set('apiKey', this.apiKey);
 
@@ -133,12 +146,9 @@ class GeoapifyService {
 
     return {
       pois: features.map((feature) => new Poi(feature)),
-      hasMore: features.length === limit,
     };
   }
 
-  // Geoapify accepts a place boundary as a filter. This works for both
-  // city and country place IDs. A bounding box is used as a fallback.
   buildAreaFilter(destination) {
     if (destination.placeId) {
       return `place:${destination.placeId}`;
@@ -149,7 +159,9 @@ class GeoapifyService {
       return `rect:${lon1},${lat1},${lon2},${lat2}`;
     }
 
-    return `circle:${destination.longitude},${destination.latitude},25000`;
+    const lat = destination.latitude !== undefined ? destination.latitude : destination.lat;
+    const lon = destination.longitude !== undefined ? destination.longitude : destination.lon;
+    return `circle:${lon},${lat},25000`;
   }
 
   requireApiKey() {
@@ -166,25 +178,19 @@ class GeoapifyService {
     try {
       response = await fetch(url);
     } catch (error) {
-      throw new Error(
-        'Unable to reach Geoapify. Check your internet connection.'
-      );
+      throw new Error('Unable to reach Geoapify. Check your internet connection.');
     }
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        throw new Error(
-          'Geoapify rejected the API key. Check geoapifyKey in .env.local.'
-        );
+        throw new Error('Geoapify rejected the API key. Check geoapifyKey in .env.local.');
       }
 
       if (response.status === 429) {
         throw new Error('Geoapify rate limit reached. Please try again later.');
       }
 
-      throw new Error(
-        `Geoapify request failed (status ${response.status}).`
-      );
+      throw new Error(`Geoapify request failed (status ${response.status}).`);
     }
 
     try {

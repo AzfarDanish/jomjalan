@@ -82,12 +82,6 @@ class Trip {
     return this.budget / this.durationDays;
   }
 
-  // Calculate estimated budget per traveler
-  getBudgetPerTraveler() {
-    if (this.travelers <= 0) return 0;
-    return this.budget / this.travelers;
-  }
-
   // Formatted date string for display (e.g. "12 Oct 2026")
   getFormattedDate() {
     if (!this.travelDate) return 'No date set';
