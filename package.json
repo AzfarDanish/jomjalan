@@ -1,14 +1,42 @@
 {
   "name": "JomJalan",
   "version": "1.0.0",
-  "description": "",
+  "description": "JomJalan desktop travel planning app",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist:win": "electron-builder --win --x64",
+    "dist": "electron-builder --win --x64"
   },
   "author": "azfar danish",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^45.2.1"
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.azfardanish.jomjalan",
+    "productName": "JomJalan",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "renderer/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "JomJalan-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "JomJalan-Portable-${version}.${ext}"
+    }
   }
 }
